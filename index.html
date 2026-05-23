@@ -182,16 +182,16 @@
                 <div>
                     <div class="section-title mt-0">Kation ermitteln</div>
                     <select id="kation-select" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-2 outline-none">
-                        </select>
+                    </select>
                     <select id="kation-beweis" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white text-sm outline-none">
-                        </select>
+                    </select>
                 </div>
                 <div>
                     <div class="section-title mt-0">Anion ermitteln</div>
                     <select id="anion-select" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-2 outline-none">
-                        </select>
+                    </select>
                     <select id="anion-beweis" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white text-sm outline-none">
-                        </select>
+                    </select>
                 </div>
             </div>
             
@@ -217,7 +217,6 @@ let aktuelleProbe = null;
 let budget = 100;
 let isExpert = false;
 
-// Global Arrays für die dynamische Generierung
 let allKations = [];
 let allKationBeweise = [];
 let allAnions = [];
@@ -226,48 +225,19 @@ let allAnionBeweise = [];
 function formatChem(text) {
     if(!text) return "";
     let s = text;
-    // Indizes tiefstellen
-    s = s.replace(/H2SO4/g, "H₂SO₄")
-         .replace(/BaCl2/g, "BaCl₂")
-         .replace(/Na2CO3/g, "Na₂CO₃")
-         .replace(/AgNO3/g, "AgNO₃")
-         .replace(/NH4OH/g, "NH₄OH")
-         .replace(/CO2/g, "CO₂")
-         .replace(/Na2S/g, "Na₂S")
-         .replace(/NH3/g, "NH₃")
-         .replace(/Ag2O/g, "Ag₂O")
-         .replace(/H2O/g, "H₂O");
-    // Ladungen hochstellen (alle 17 Kationen + Anionen)
-    s = s.replace(/Al3\+/g, "Al³⁺")
-         .replace(/Cr3\+/g, "Cr³⁺")
-         .replace(/Fe3\+/g, "Fe³⁺")
-         .replace(/Ca2\+/g, "Ca²⁺")
-         .replace(/Ba2\+/g, "Ba²⁺")
-         .replace(/Cu2\+/g, "Cu²⁺")
-         .replace(/Fe2\+/g, "Fe²⁺")
-         .replace(/Zn2\+/g, "Zn²⁺")
-         .replace(/Ni2\+/g, "Ni²⁺")
-         .replace(/Cd2\+/g, "Cd²⁺")
-         .replace(/Pb2\+/g, "Pb²⁺")
-         .replace(/Mn2\+/g, "Mn²⁺")
-         .replace(/Mg2\+/g, "Mg²⁺")
-         .replace(/Co2\+/g, "Co²⁺")
-         .replace(/Sr2\+/g, "Sr²⁺")
-         .replace(/Na\+/g, "Na⁺")
-         .replace(/K\+/g, "K⁺")
-         .replace(/Ag\+/g, "Ag⁺")
-         .replace(/NH4\+/g, "NH₄⁺")
-         .replace(/Li\+/g, "Li⁺");
-    // Anionen
-    s = s.replace(/PO4 3\-/g, "PO₄³⁻")
-         .replace(/CO3 2\-/g, "CO₃²⁻")
-         .replace(/SO4 2\-/g, "SO₄²⁻")
-         .replace(/Cl\-/g, "Cl⁻")
-         .replace(/Br\-/g, "Br⁻")
-         .replace(/CH3COO\-/g, "CH₃COO⁻")
-         .replace(/NO3\-/g, "NO₃⁻")
-         .replace(/HCO3\-/g, "HCO₃⁻")
-         .replace(/OH\-/g, "OH⁻");
+    s = s.replace(/H2SO4/g, "H₂SO₄").replace(/BaCl2/g, "BaCl₂").replace(/Na2CO3/g, "Na₂CO₃")
+         .replace(/AgNO3/g, "AgNO₃").replace(/NH4OH/g, "NH₄OH").replace(/CO2/g, "CO₂")
+         .replace(/Na2S/g, "Na₂S").replace(/NH3/g, "NH₃").replace(/Ag2O/g, "Ag₂O").replace(/H2O/g, "H₂O");
+    s = s.replace(/Al3\+/g, "Al³⁺").replace(/Cr3\+/g, "Cr³⁺").replace(/Fe3\+/g, "Fe³⁺")
+         .replace(/Ca2\+/g, "Ca²⁺").replace(/Ba2\+/g, "Ba²⁺").replace(/Cu2\+/g, "Cu²⁺")
+         .replace(/Fe2\+/g, "Fe²⁺").replace(/Zn2\+/g, "Zn²⁺").replace(/Ni2\+/g, "Ni²⁺")
+         .replace(/Cd2\+/g, "Cd²⁺").replace(/Pb2\+/g, "Pb²⁺").replace(/Mn2\+/g, "Mn²⁺")
+         .replace(/Mg2\+/g, "Mg²⁺").replace(/Co2\+/g, "Co²⁺").replace(/Sr2\+/g, "Sr²⁺")
+         .replace(/Na\+/g, "Na⁺").replace(/K\+/g, "K⁺").replace(/Ag\+/g, "Ag⁺")
+         .replace(/NH4\+/g, "NH₄⁺").replace(/Li\+/g, "Li⁺");
+    s = s.replace(/PO4 3\-/g, "PO₄³⁻").replace(/CO3 2\-/g, "CO₃²⁻").replace(/SO4 2\-/g, "SO₄²⁻")
+         .replace(/Cl\-/g, "Cl⁻").replace(/Br\-/g, "Br⁻").replace(/CH3COO\-/g, "CH₃COO⁻")
+         .replace(/NO3\-/g, "NO₃⁻").replace(/HCO3\-/g, "HCO₃⁻").replace(/OH\-/g, "OH⁻");
     return s;
 }
 
@@ -291,7 +261,7 @@ function init() {
         })
         .catch(error => {
             console.error("Fehler beim Laden:", error);
-            updateStatus("Fehler beim Laden der Datenbank (salze.json)! Lade die App über einen lokalen Webserver oder lade sie auf GitHub hoch.");
+            updateStatus("Fehler beim Laden der Datenbank (salze.json)!");
         });
 }
 
@@ -365,7 +335,6 @@ function mixCationDropdowns() {
     kSelect.innerHTML = '<option value="">Kation wählen...</option>';
     kbSelect.innerHTML = '<option value="">Beweis Kation wählen...</option>';
 
-    // Genau 7 Optionen
     let distractorsK = allKations.filter(k => k !== aktuelleProbe.kation).sort(() => 0.5 - Math.random()).slice(0, 6);
     let finalKations = [aktuelleProbe.kation, ...distractorsK].sort();
 
@@ -448,7 +417,8 @@ function glasAuswaschen(manual) {
 
 function checkFarbe() {
     if(!checkBudget()) return;
-    let text = `Die Lösung ist ${aktuelleProbe.farbe}.`;
+    // Vorsatz weggelassen, Startbuchstabe groß
+    let text = aktuelleProbe.farbe.charAt(0).toUpperCase() + aktuelleProbe.farbe.slice(1);
     if(isExpert) text = "Farbe wurde begutachtet.";
     updateStatus(text);
 }
@@ -487,7 +457,6 @@ function checkPH() {
     else if((aktuelleProbe.spezial||"").includes('schwach basisch')) { paperColor = "#3b82f6"; phText = "schwach basisch"; }
     
     setTimeout(() => { paper.style.backgroundColor = paperColor; }, 700);
-    
     setTimeout(() => { 
         paper.classList.remove('dipped'); 
         let text = `Das pH-Papier deutet auf ein ${phText}es Milieu hin.`;
@@ -594,27 +563,32 @@ function addReagent(reagent) {
             const prep = document.getElementById('precipitate');
             const resLower = result.toLowerCase();
             
-            if(resLower.includes("weiß")) prep.style.backgroundColor = "rgba(255,255,255,0.7)";
-            else if(resLower.includes("gelb")) prep.style.backgroundColor = "rgba(250,204,21,0.7)";
-            else if(resLower.includes("braun")) prep.style.backgroundColor = "rgba(120,53,15,0.7)";
-            else if(resLower.includes("blau")) prep.style.backgroundColor = "rgba(59,130,246,0.7)";
-            else if(resLower.includes("grün")) prep.style.backgroundColor = "rgba(34,197,94,0.7)";
-            else if(resLower.includes("schwarz")) prep.style.backgroundColor = "rgba(20,20,20,0.8)";
-            else if(resLower.includes("rosa") || resLower.includes("fleisch")) prep.style.backgroundColor = "rgba(244,114,182,0.7)";
-            else if(resLower.includes("violett")) prep.style.backgroundColor = "rgba(167,139,250,0.7)";
-            else prep.style.backgroundColor = "rgba(200,200,200,0.7)";
+            if(resLower.includes("weiß")) prep.style.backgroundColor = "rgba(255,255,255,0.8)";
+            else if(resLower.includes("gelb") && !resLower.includes("grün")) prep.style.backgroundColor = "rgba(250,204,21,0.8)";
+            else if(resLower.includes("braun")) prep.style.backgroundColor = "rgba(120,53,15,0.8)";
+            else if(resLower.includes("blau") && !resLower.includes("grün")) prep.style.backgroundColor = "rgba(59,130,246,0.8)";
+            else if(resLower.includes("grün")) prep.style.backgroundColor = "rgba(34,197,94,0.8)";
+            else if(resLower.includes("schwarz")) prep.style.backgroundColor = "rgba(20,20,20,0.9)";
+            else if(resLower.includes("rosa") || resLower.includes("fleisch") || resLower.includes("beige")) prep.style.backgroundColor = "rgba(244,114,182,0.8)";
+            else if(resLower.includes("violett")) prep.style.backgroundColor = "rgba(167,139,250,0.8)";
+            else prep.style.backgroundColor = "rgba(200,200,200,0.8)";
             
             prep.style.height = "30%";
             prep.style.opacity = 1;
             
-            if(resLower.includes("löst sich") || resLower.includes("->")) {
+            // Löst sich nur auf, wenn ein expliziter Pfeil (->) für das Auflösen existiert
+            if(resLower.includes("->")) {
                 setTimeout(() => {
                     prep.style.opacity = 0;
                     prep.style.height = "0%";
                     const liquid = document.getElementById('liquid');
-                    if(resLower.includes("blau")) liquid.style.backgroundColor = "rgba(30,58,138,0.6)"; 
-                    if(resLower.includes("grün")) liquid.style.backgroundColor = "rgba(16,185,129,0.5)"; 
-                    if(resLower.includes("farblos")) liquid.style.backgroundColor = "rgba(255,255,255,0.1)"; 
+                    let afterDissolve = resLower.split("->")[1];
+                    
+                    if(afterDissolve.includes("tiefblau")) liquid.style.backgroundColor = "rgba(30,58,138,0.8)"; 
+                    else if(afterDissolve.includes("blau")) liquid.style.backgroundColor = "rgba(56,189,248,0.5)"; 
+                    else if(afterDissolve.includes("smaragd") || afterDissolve.includes("grün")) liquid.style.backgroundColor = "rgba(16,185,129,0.6)"; 
+                    else if(afterDissolve.includes("gelblich")) liquid.style.backgroundColor = "rgba(234,179,8,0.3)"; 
+                    else if(afterDissolve.includes("farblos") || afterDissolve.includes("klar")) liquid.style.backgroundColor = "rgba(255,255,255,0.1)"; 
                 }, 1500);
             }
         }
@@ -626,13 +600,8 @@ function addReagent(reagent) {
     }, 600);
 }
 
-// Name-Validator-Helper
-function stripRoman(str) {
-    return str.toLowerCase().replace(/[\(\)ivx\s-]/g, '');
-}
-function normalizeName(str) {
-    return str.toLowerCase().replace(/[\s-]/g, '');
-}
+function stripRoman(str) { return str.toLowerCase().replace(/[\(\)ivx\s-]/g, ''); }
+function normalizeName(str) { return str.toLowerCase().replace(/[\s-]/g, ''); }
 
 function loesen() {
     const kSelect = document.getElementById('kation-select').value;
@@ -651,7 +620,6 @@ function loesen() {
     const isBKat = (kBeweis === aktuelleProbe.beweis_kat);
     const isBAni = (aBeweis === aktuelleProbe.beweis_ani);
     
-    // Namensüberprüfung
     const exactMatch = sName.toLowerCase() === aktuelleProbe.name.toLowerCase();
     const testNorm = normalizeName(sName);
     const refNorm = normalizeName(aktuelleProbe.name);
@@ -686,7 +654,7 @@ function loesen() {
         title.className = "text-2xl font-bold mb-6 text-emerald-400 text-center";
         
         let msg = isNameTolerated ? 
-            `Das Salz ist <b>${formatChem(aktuelleProbe.name)}</b>. <br>Achte künftig bei der Eingabe auf die genaue chemische Schreibweise!` : 
+            `Das Salz ist <b>${formatChem(aktuelleProbe.name)}</b>. <br>Achte künftig bei der Eingabe auf die genaue chemische Schreibweise und die Wertigkeiten!` : 
             `Das Salz ist eindeutig <b>${formatChem(aktuelleProbe.name)}</b>. Hervorragende Arbeit!`;
             
         html += `<div class="mt-6 p-4 bg-emerald-900/50 border border-emerald-500 rounded text-emerald-100 text-center">${msg}</div>`;
