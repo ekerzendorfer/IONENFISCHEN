@@ -47,10 +47,16 @@
         .steam { width: 15px; height: 15px; background-color: rgba(200, 200, 200, 0.4); border-radius: 50%; position: absolute; animation: steam-rise 2s infinite; filter: blur(3px); }
         .steam:nth-child(2) { animation-delay: 0.5s; left: -10px; }
         .steam:nth-child(3) { animation-delay: 1s; left: 10px; }
-        @keyframes steam-rise {
-            0% { transform: translateY(0) scale(1); opacity: 0.6; }
-            100% { transform: translateY(-50px) scale(3); opacity: 0; }
-        }
+        @keyframes steam-rise { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 100% { transform: translateY(-50px) scale(3); opacity: 0; } }
+
+        /* Animation: Bläschen (Carbonat/CO2) */
+        .bubble-container { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: none; z-index: 15; width: 40px; height: 100px; }
+        .bubble { width: 5px; height: 5px; background-color: rgba(255,255,255,0.7); border-radius: 50%; position: absolute; bottom: 0; animation: bubble-rise 1.2s infinite ease-in; }
+        .bubble:nth-child(1) { left: 5px; animation-delay: 0s; }
+        .bubble:nth-child(2) { left: 15px; animation-delay: 0.3s; width: 7px; height: 7px; }
+        .bubble:nth-child(3) { left: 25px; animation-delay: 0.6s; }
+        .bubble:nth-child(4) { left: 10px; animation-delay: 0.9s; width: 4px; height: 4px; }
+        @keyframes bubble-rise { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-90px); opacity: 0; } }
 
         /* Dezenter Status Text */
         .status-text { text-align: center; color: #94a3b8; font-size: 1rem; min-height: 24px; margin-top: 20px; font-style: italic; }
@@ -109,6 +115,12 @@
                 <div class="steam"></div>
                 <div class="steam"></div>
             </div>
+            <div class="bubble-container" id="bubbles">
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+                <div class="bubble"></div>
+            </div>
             <div class="brown-ring" id="brown-ring"></div>
             <div class="precipitate" id="precipitate"></div>
             <div class="under-layer" id="under-layer"></div>
@@ -136,8 +148,7 @@
                 </div>
                 <div>
                     <div class="section-title mt-0">Geruchsnachweise</div>
-                    <button class="action-btn" onclick="checkGeruch('NaOH')">Erwärmen mit NaOH</button>
-                    <button class="action-btn" onclick="checkGeruch('Säure')">Erwärmen mit Säure (HCl/H₂SO₄)</button>
+                    <button class="action-btn" onclick="checkGeruch('NaOH')">Erwärmen mit NaOH (Ammonium-Test)</button>
                 </div>
             </div>
         </div>
@@ -161,6 +172,7 @@
                 <button class="action-btn" onclick="addReagent('AgNO3')">AgNO₃ (Silbernitrat)</button>
                 <button class="action-btn" onclick="addReagent('Molybdat')">Ammoniummolybdat</button>
                 <button class="action-btn" onclick="doRingprobe()">Ringprobe (auf Nitrat)</button>
+                <button class="action-btn" onclick="checkSaeureAnion()">Säurezugabe (auf Carbonat/Acetat)</button>
             </div>
         </div>
 
@@ -169,20 +181,16 @@
                 <div>
                     <div class="section-title mt-0">Kation ermitteln</div>
                     <select id="kation-select" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-2 outline-none">
-                        <option value="">Kation wählen...</option>
-                    </select>
+                        </select>
                     <select id="kation-beweis" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white text-sm outline-none">
-                        <option value="">Beweis Kation wählen...</option>
-                    </select>
+                        </select>
                 </div>
                 <div>
                     <div class="section-title mt-0">Anion ermitteln</div>
                     <select id="anion-select" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-2 outline-none">
-                        <option value="">Anion wählen...</option>
-                    </select>
+                        </select>
                     <select id="anion-beweis" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white text-sm outline-none">
-                        <option value="">Beweis Anion wählen...</option>
-                    </select>
+                        </select>
                 </div>
             </div>
             
@@ -208,10 +216,61 @@ let aktuelleProbe = null;
 let budget = 100;
 let isExpert = false;
 
+// Global Arrays für die dynamische Generierung
+let allKations = [];
+let allKationBeweise = [];
+let allAnions = [];
+let allAnionBeweise = [];
+
+function formatChem(text) {
+    if(!text) return "";
+    let s = text;
+    // Verbindungen und Reagenzien (Indizes tiefstellen)
+    s = s.replace(/H2SO4/g, "H₂SO₄")
+         .replace(/BaCl2/g, "BaCl₂")
+         .replace(/Na2CO3/g, "Na₂CO₃")
+         .replace(/AgNO3/g, "AgNO₃")
+         .replace(/NH4OH/g, "NH₄OH")
+         .replace(/CO2/g, "CO₂")
+         .replace(/Na2S/g, "Na₂S")
+         .replace(/NH3/g, "NH₃")
+         .replace(/Ag2O/g, "Ag₂O")
+         .replace(/H2O/g, "H₂O");
+    // Kationen (Ladungen hochstellen)
+    s = s.replace(/Na\+/g, "Na⁺")
+         .replace(/K\+/g, "K⁺")
+         .replace(/Ca2\+/g, "Ca²⁺")
+         .replace(/Ba2\+/g, "Ba²⁺")
+         .replace(/Cu2\+/g, "Cu²⁺")
+         .replace(/Fe2\+/g, "Fe²⁺")
+         .replace(/Fe3\+/g, "Fe³⁺")
+         .replace(/Zn2\+/g, "Zn²⁺")
+         .replace(/Ni2\+/g, "Ni²⁺")
+         .replace(/Ag\+/g, "Ag⁺")
+         .replace(/NH4\+/g, "NH₄⁺")
+         .replace(/Cr3\+/g, "Cr³⁺")
+         .replace(/Cd2\+/g, "Cd²⁺")
+         .replace(/Pb2\+/g, "Pb²⁺")
+         .replace(/Mn2\+/g, "Mn²⁺")
+         .replace(/Mg2\+/g, "Mg²⁺")
+         .replace(/Li\+/g, "Li⁺")
+         .replace(/Co2\+/g, "Co²⁺");
+    // Anionen (Ladungen hochstellen)
+    s = s.replace(/Cl\-/g, "Cl⁻")
+         .replace(/CO3 2\-/g, "CO₃²⁻")
+         .replace(/SO4 2\-/g, "SO₄²⁻")
+         .replace(/Br\-/g, "Br⁻")
+         .replace(/CH3COO\-/g, "CH₃COO⁻")
+         .replace(/NO3\-/g, "NO₃⁻")
+         .replace(/PO4 3\-/g, "PO₄³⁻")
+         .replace(/HCO3\-/g, "HCO₃⁻")
+         .replace(/OH\-/g, "OH⁻");
+    return s;
+}
+
 function init() {
     document.getElementById('expert-mode').addEventListener('change', (e) => { isExpert = e.target.checked; });
     
-    // JSON laden
     fetch('salze.json')
         .then(response => {
             if (!response.ok) throw new Error('salze.json konnte nicht geladen werden.');
@@ -220,7 +279,8 @@ function init() {
         .then(data => {
             salze = data;
             if (salze.length > 0) {
-                populateDropdowns();
+                extractUniqueData();
+                populateStaticAnionDropdowns();
                 neueProbe();
             } else {
                 updateStatus("Fehler: salze.json ist leer!");
@@ -228,41 +288,34 @@ function init() {
         })
         .catch(error => {
             console.error("Fehler beim Laden:", error);
-            updateStatus("Fehler beim Laden der Datenbank (salze.json)! Lade die App über einen lokalen Webserver oder lade sie auf GitHub hoch.");
+            updateStatus("Fehler beim Laden der Datenbank (salze.json)!");
         });
 }
 
-function populateDropdowns() {
-    const katSet = new Set();
-    const aniSet = new Set();
-    const bKatSet = new Set();
-    const bAniSet = new Set();
+function extractUniqueData() {
+    allKations = [...new Set(salze.map(s => s.kation))].filter(Boolean);
+    allKationBeweise = [...new Set(salze.map(s => s.beweis_kat))].filter(Boolean);
+    allAnions = [...new Set(salze.map(s => s.anion))].filter(Boolean);
+    allAnionBeweise = [...new Set(salze.map(s => s.beweis_ani))].filter(Boolean);
+}
 
-    salze.forEach(s => {
-        if(s.kation) katSet.add(s.kation);
-        if(s.anion) aniSet.add(s.anion);
-        if(s.beweis_kat) bKatSet.add(s.beweis_kat);
-        if(s.beweis_ani) bAniSet.add(s.beweis_ani);
+function populateStaticAnionDropdowns() {
+    const aSelect = document.getElementById('anion-select');
+    const abSelect = document.getElementById('anion-beweis');
+    
+    aSelect.innerHTML = '<option value="">Anion wählen...</option>';
+    allAnions.sort().forEach(a => {
+        aSelect.innerHTML += `<option value="${a}">${formatChem(a)}</option>`;
     });
-
-    const fillSelect = (id, set) => {
-        const select = document.getElementById(id);
-        Array.from(set).sort().forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item;
-            opt.innerText = item;
-            select.appendChild(opt);
-        });
-    };
-
-    fillSelect('kation-select', katSet);
-    fillSelect('anion-select', aniSet);
-    fillSelect('kation-beweis', bKatSet);
-    fillSelect('anion-beweis', bAniSet);
+    
+    abSelect.innerHTML = '<option value="">Beweis Anion wählen...</option>';
+    allAnionBeweise.sort().forEach(b => {
+        abSelect.innerHTML += `<option value="${b}">${formatChem(b)}</option>`;
+    });
 }
 
 function updateStatus(text) {
-    document.getElementById('status').innerHTML = text;
+    document.getElementById('status').innerHTML = formatChem(text);
 }
 
 function switchTab(id) {
@@ -289,6 +342,9 @@ function neueProbe() {
     budget = 100;
     document.getElementById('budget').innerText = budget;
     
+    // Dynamisch genau 7 Kationen und 7 Beweise für diese Probe mischen
+    mixCationDropdowns();
+
     document.getElementById('kation-select').value = "";
     document.getElementById('anion-select').value = "";
     document.getElementById('kation-beweis').value = "";
@@ -298,6 +354,29 @@ function neueProbe() {
     glasAuswaschen(false);
     switchTab('vor');
     updateStatus("Neue Probe bereit. Starte mit den Vorproben.");
+}
+
+function mixCationDropdowns() {
+    const kSelect = document.getElementById('kation-select');
+    const kbSelect = document.getElementById('kation-beweis');
+    
+    kSelect.innerHTML = '<option value="">Kation wählen...</option>';
+    kbSelect.innerHTML = '<option value="">Beweis Kation wählen...</option>';
+
+    // 1 richtige Antwort + 6 zufällige Distraktoren
+    let distractorsK = allKations.filter(k => k !== aktuelleProbe.kation).sort(() => 0.5 - Math.random()).slice(0, 6);
+    let finalKations = [aktuelleProbe.kation, ...distractorsK].sort();
+
+    let distractorsKB = allKationBeweise.filter(b => b !== aktuelleProbe.beweis_kat).sort(() => 0.5 - Math.random()).slice(0, 6);
+    let finalBeweise = [aktuelleProbe.beweis_kat, ...distractorsKB].sort();
+
+    finalKations.forEach(k => {
+        kSelect.innerHTML += `<option value="${k}">${formatChem(k)}</option>`;
+    });
+
+    finalBeweise.forEach(b => {
+        kbSelect.innerHTML += `<option value="${b}">${formatChem(b)}</option>`;
+    });
 }
 
 function checkBudget() {
@@ -338,10 +417,12 @@ function glasAuswaschen(manual) {
     const brownRing = document.getElementById('brown-ring');
     const phPaper = document.getElementById('ph-paper');
     const steam = document.getElementById('steam');
+    const bubbles = document.getElementById('bubbles');
     
     document.getElementById('flame').style.backgroundColor = '#3b82f6';
     document.getElementById('magnesia-stick').classList.remove('active');
     steam.style.display = 'none';
+    bubbles.style.display = 'none';
     
     phPaper.classList.remove('active', 'dipped');
     setTimeout(() => { phPaper.style.backgroundColor = '#fef08a'; }, 600);
@@ -374,7 +455,6 @@ function checkFlamme() {
     if(!checkBudget()) return;
     const flame = document.getElementById('flame');
     const stick = document.getElementById('magnesia-stick');
-    
     stick.classList.add('active');
     
     setTimeout(() => {
@@ -393,18 +473,16 @@ function checkFlamme() {
 function checkPH() {
     if(!checkBudget()) return;
     const paper = document.getElementById('ph-paper');
-    
     paper.classList.add('active');
     setTimeout(() => { paper.classList.add('dipped'); }, 100);
     
     let paperColor = "#fef08a"; 
     let phText = "annähernd neutral (oder unauffällig)";
     
-    if(aktuelleProbe.spezial.includes('stark basisch')) { paperColor = "#1e3a8a"; phText = "stark basisch"; }
-    else if(aktuelleProbe.spezial.includes('schwach basisch')) { paperColor = "#3b82f6"; phText = "schwach basisch"; }
+    if((aktuelleProbe.spezial||"").includes('stark basisch')) { paperColor = "#1e3a8a"; phText = "stark basisch"; }
+    else if((aktuelleProbe.spezial||"").includes('schwach basisch')) { paperColor = "#3b82f6"; phText = "schwach basisch"; }
     
     setTimeout(() => { paper.style.backgroundColor = paperColor; }, 700);
-    
     setTimeout(() => { 
         paper.classList.remove('dipped'); 
         let text = `Das pH-Papier deutet auf ein ${phText}es Milieu hin.`;
@@ -426,13 +504,6 @@ function checkGeruch(art) {
         if (art === 'NaOH' && checkStr.includes('ammoniak')) {
             resultText = "Es steigt ein stechender Geruch auf (Ammoniak).";
             hasOdor = true;
-        } else if (art === 'Säure' && (checkStr.includes('essig') || checkStr.includes('gas') || checkStr.includes('co2'))) {
-            if(checkStr.includes('essig')) {
-                resultText = "Es ist ein deutlicher Essiggeruch wahrnehmbar.";
-            } else {
-                resultText = "Es ist eine deutliche Gasentwicklung (Aufschäumen) bemerkbar.";
-            }
-            hasOdor = true;
         }
         
         if (hasOdor) {
@@ -442,10 +513,49 @@ function checkGeruch(art) {
         }
         
         if (isExpert) {
-            resultText = hasOdor ? "Wahrnehmung: Gas/Geruchsbildung!" : "Keine Auffälligkeiten.";
+            resultText = hasOdor ? "Wahrnehmung: Geruchsbildung!" : "Keine Auffälligkeiten.";
         }
         
         updateStatus(`Erwärmen mit ${art}... ` + resultText);
+    }, 600);
+}
+
+function checkSaeureAnion() {
+    if(!checkBudget()) return;
+    glasAuswaschen(false);
+    
+    setTimeout(() => {
+        let resultText = "Keine sichtbare Reaktion.";
+        let isGas = false;
+        let isSmell = false;
+        
+        // Prüfe hcl, h2so4 und beweis_ani auf Hinweise zu Gas/Essig
+        const checkStr = (aktuelleProbe.hcl + aktuelleProbe.h2so4 + (aktuelleProbe.beweis_ani||"")).toLowerCase();
+        
+        if (checkStr.includes('co2') || checkStr.includes('gas') || checkStr.includes('aufschäumen')) {
+            resultText = "Deutliche Gasentwicklung (Aufschäumen) bemerkbar.";
+            isGas = true;
+        } else if (checkStr.includes('essig')) {
+            resultText = "Es ist ein deutlicher Essiggeruch wahrnehmbar.";
+            isSmell = true;
+        }
+        
+        if (isGas) {
+            const bubbles = document.getElementById('bubbles');
+            bubbles.style.display = 'block';
+            setTimeout(() => { bubbles.style.display = 'none'; }, 3000);
+        }
+        if (isSmell) {
+            const steam = document.getElementById('steam');
+            steam.style.display = 'block';
+            setTimeout(() => { steam.style.display = 'none'; }, 3000);
+        }
+        
+        if (isExpert) {
+            resultText = (isGas || isSmell) ? "Wahrnehmung: Gas/Geruchsbildung!" : "Keine Auffälligkeiten.";
+        }
+        
+        updateStatus(`Säurezugabe... ` + resultText);
     }, 600);
 }
 
@@ -463,7 +573,7 @@ function doRingprobe() {
         underLayer.style.height = '20%';
         
         setTimeout(() => {
-            if(aktuelleProbe.ringprobe.toLowerCase().includes('positiv')) {
+            if((aktuelleProbe.ringprobe||"").toLowerCase().includes('positiv')) {
                 brownRing.style.opacity = 1;
                 let text = "Ein brauner Ring bildet sich an der Grenzschicht aus.";
                 if(isExpert) text = "Reaktion an der Grenzschicht beobachtet.";
@@ -483,7 +593,6 @@ function addReagent(reagent) {
     
     setTimeout(() => {
         let result = "";
-        let isGas = false;
 
         switch(reagent) {
             case 'HCl': result = aktuelleProbe.hcl; break;
@@ -500,8 +609,6 @@ function addReagent(reagent) {
         }
         
         if(!result || result === '-') result = "";
-
-        if(result.includes("Gas") || result.includes("geruch") || result.includes("Aufschäumen")) isGas = true;
 
         if(result.includes("N.") || result.includes("Niederschlag")) {
             const prep = document.getElementById('precipitate');
@@ -524,6 +631,7 @@ function addReagent(reagent) {
                 setTimeout(() => {
                     prep.style.opacity = 0;
                     prep.style.height = "0%";
+                    const liquid = document.getElementById('liquid');
                     if(resLower.includes("blau")) liquid.style.backgroundColor = "rgba(30,58,138,0.6)"; 
                     if(resLower.includes("grün")) liquid.style.backgroundColor = "rgba(16,185,129,0.5)"; 
                     if(resLower.includes("farblos")) liquid.style.backgroundColor = "rgba(255,255,255,0.1)"; 
@@ -532,7 +640,7 @@ function addReagent(reagent) {
         }
 
         let outputText = result ? result : `Keine sichtbare Reaktion.`;
-        if(isExpert) outputText = result ? `Reaktion beobachtet.` + (isGas ? " (Wahrnehmung: Gas/Geruch!)" : "") : `Keine sichtbare Reaktion.`;
+        if(isExpert) outputText = result ? `Reaktion beobachtet.` : `Keine sichtbare Reaktion.`;
 
         updateStatus(outputText);
     }, 600);
@@ -569,9 +677,9 @@ function loesen() {
     const title = document.getElementById('modal-title');
     
     let html = `<ul class="space-y-2">`;
-    html += `<li>Kation: ${isKat ? '✅ Korrekt' : `❌ Falsch (gewählt: ${kSelect})`}</li>`;
+    html += `<li>Kation: ${isKat ? '✅ Korrekt' : `❌ Falsch (gewählt: ${formatChem(kSelect)})`}</li>`;
     html += `<li>Beweis Kation: ${isBKat ? '✅ Korrekt' : `❌ Falsch`}</li>`;
-    html += `<li>Anion: ${isAni ? '✅ Korrekt' : `❌ Falsch (gewählt: ${aSelect})`}</li>`;
+    html += `<li>Anion: ${isAni ? '✅ Korrekt' : `❌ Falsch (gewählt: ${formatChem(aSelect)})`}</li>`;
     html += `<li>Beweis Anion: ${isBAni ? '✅ Korrekt' : `❌ Falsch`}</li>`;
     html += `<li>Salzname: ${isNameValid ? '✅ Korrekt' : `❌ Falsch (eingetippt: ${sName})`}</li>`;
     html += `</ul>`;
