@@ -170,64 +170,18 @@
                     <div class="section-title mt-0">Kation ermitteln</div>
                     <select id="kation-select" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-2 outline-none">
                         <option value="">Kation wählen...</option>
-                        <option value="Ag+">Ag⁺</option>
-                        <option value="Al3+">Al³⁺</option>
-                        <option value="Ba2+">Ba²⁺</option>
-                        <option value="Ca2+">Ca²⁺</option>
-                        <option value="Cd2+">Cd²⁺</option>
-                        <option value="Co2+">Co²⁺</option>
-                        <option value="Cr3+">Cr³⁺</option>
-                        <option value="Cu2+">Cu²⁺</option>
-                        <option value="Fe2+">Fe²⁺</option>
-                        <option value="Fe3+">Fe³⁺</option>
-                        <option value="K+">K⁺</option>
-                        <option value="Li+">Li⁺</option>
-                        <option value="Mg2+">Mg²⁺</option>
-                        <option value="Mn2+">Mn²⁺</option>
-                        <option value="Na+">Na⁺</option>
-                        <option value="NH4+">NH₄⁺</option>
-                        <option value="Ni2+">Ni²⁺</option>
-                        <option value="Pb2+">Pb²⁺</option>
-                        <option value="Sr2+">Sr²⁺</option>
-                        <option value="Zn2+">Zn²⁺</option>
                     </select>
                     <select id="kation-beweis" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white text-sm outline-none">
                         <option value="">Beweis Kation wählen...</option>
-                        <option value="flamme">Spezifische Flammenfärbung</option>
-                        <option value="nd_naoh_loest_nh3">N. mit NaOH, löst sich in NH₃ (Komplex)</option>
-                        <option value="nd_naoh_loest_naoh">N. mit NaOH, löst sich im NaOH Überschuss</option>
-                        <option value="nd_naoh_bleibt">Bleibender N. mit NaOH / NH₄OH</option>
-                        <option value="geruch_naoh">Stechender Geruch nach Erhitzen mit NaOH</option>
-                        <option value="nd_hcl_loest_nh3">Weißer N. mit HCl, löst sich in NH₃</option>
-                        <option value="nd_hcl_h2so4">Weißer N. mit HCl und H₂SO₄</option>
-                        <option value="ausschluss">Keine spez. Reaktion / Ausschlussverfahren</option>
                     </select>
                 </div>
                 <div>
                     <div class="section-title mt-0">Anion ermitteln</div>
                     <select id="anion-select" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-2 outline-none">
                         <option value="">Anion wählen...</option>
-                        <option value="Br-">Br⁻</option>
-                        <option value="CH3COO-">CH₃COO⁻</option>
-                        <option value="Cl-">Cl⁻</option>
-                        <option value="CO3 2-">CO₃²⁻</option>
-                        <option value="HCO3-">HCO₃⁻</option>
-                        <option value="NO3-">NO₃⁻</option>
-                        <option value="OH-">OH⁻</option>
-                        <option value="PO4 3-">PO₄³⁻</option>
-                        <option value="SO4 2-">SO₄²⁻</option>
                     </select>
                     <select id="anion-beweis" class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white text-sm outline-none">
                         <option value="">Beweis Anion wählen...</option>
-                        <option value="ag_weiss_nh3">Weißer N. mit AgNO₃, löst sich in NH₃</option>
-                        <option value="ag_gelblich">Blassgelber/Gelblicher N. mit AgNO₃</option>
-                        <option value="ba_weiss">Schwerer weißer N. mit BaCl₂</option>
-                        <option value="ring">Brauner Ring (Ringprobe)</option>
-                        <option value="molybdat">Gelber N. mit Ammoniummolybdat</option>
-                        <option value="gas_saeure">Gasentwicklung bei Säurezugabe (HCl/H₂SO₄)</option>
-                        <option value="geruch_saeure">Essiggeruch bei Säurezugabe</option>
-                        <option value="stark_basisch">Stark basischer pH-Wert</option>
-                        <option value="ausschluss">Ausschlussverfahren</option>
                     </select>
                 </div>
             </div>
@@ -236,8 +190,15 @@
             <input type="text" id="salt-name" placeholder="z.B. Natriumchlorid, Eisen(III)-sulfat..." class="w-full p-2 bg-slate-800 border border-slate-600 rounded text-white mb-4 outline-none">
             
             <button class="bg-emerald-600 hover:bg-emerald-500 w-full py-3 rounded font-bold transition text-lg shadow" onclick="loesen()">Ergebnis überprüfen</button>
-            <div id="auswertung-feedback" class="text-center mt-3 text-sm font-bold"></div>
         </div>
+    </div>
+</div>
+
+<div id="feedback-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex justify-center items-center">
+    <div class="bg-slate-800 p-8 rounded-xl border border-slate-600 w-[550px] shadow-2xl">
+        <h2 id="modal-title" class="text-2xl font-bold mb-6 text-white text-center">Ergebnisprüfung</h2>
+        <div id="modal-content" class="space-y-4 mb-8 text-slate-300 text-[15px]"></div>
+        <button onclick="document.getElementById('feedback-modal').classList.add('hidden')" class="w-full bg-slate-600 hover:bg-slate-500 py-3 rounded font-bold text-white transition">Schließen</button>
     </div>
 </div>
 
@@ -253,14 +214,13 @@ function init() {
     // JSON laden
     fetch('salze.json')
         .then(response => {
-            if (!response.ok) {
-                throw new Error('salze.json konnte nicht geladen werden.');
-            }
+            if (!response.ok) throw new Error('salze.json konnte nicht geladen werden.');
             return response.json();
         })
         .then(data => {
             salze = data;
             if (salze.length > 0) {
+                populateDropdowns();
                 neueProbe();
             } else {
                 updateStatus("Fehler: salze.json ist leer!");
@@ -270,6 +230,35 @@ function init() {
             console.error("Fehler beim Laden:", error);
             updateStatus("Fehler beim Laden der Datenbank (salze.json)! Lade die App über einen lokalen Webserver oder lade sie auf GitHub hoch.");
         });
+}
+
+function populateDropdowns() {
+    const katSet = new Set();
+    const aniSet = new Set();
+    const bKatSet = new Set();
+    const bAniSet = new Set();
+
+    salze.forEach(s => {
+        if(s.kation) katSet.add(s.kation);
+        if(s.anion) aniSet.add(s.anion);
+        if(s.beweis_kat) bKatSet.add(s.beweis_kat);
+        if(s.beweis_ani) bAniSet.add(s.beweis_ani);
+    });
+
+    const fillSelect = (id, set) => {
+        const select = document.getElementById(id);
+        Array.from(set).sort().forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item;
+            opt.innerText = item;
+            select.appendChild(opt);
+        });
+    };
+
+    fillSelect('kation-select', katSet);
+    fillSelect('anion-select', aniSet);
+    fillSelect('kation-beweis', bKatSet);
+    fillSelect('anion-beweis', bAniSet);
 }
 
 function updateStatus(text) {
@@ -295,21 +284,16 @@ function toggleLightMode() {
 function neueProbe() {
     if (!salze || salze.length === 0) return;
     
-    // Sortieren der Liste basierend auf probe_XX, um korrekte ID zu gewährleisten
-    const randomIndex = Math.floor(Math.random() * salze.length);
-    aktuelleProbe = salze[randomIndex];
-    
+    aktuelleProbe = salze[Math.floor(Math.random() * salze.length)];
     document.getElementById('probe-label').innerText = `Probe: ${aktuelleProbe.id.toUpperCase()}`;
     budget = 100;
     document.getElementById('budget').innerText = budget;
     
-    // Reset Formulare
     document.getElementById('kation-select').value = "";
     document.getElementById('anion-select').value = "";
     document.getElementById('kation-beweis').value = "";
     document.getElementById('anion-beweis').value = "";
     document.getElementById('salt-name').value = "";
-    document.getElementById('auswertung-feedback').innerHTML = "";
 
     glasAuswaschen(false);
     switchTab('vor');
@@ -359,7 +343,6 @@ function glasAuswaschen(manual) {
     document.getElementById('magnesia-stick').classList.remove('active');
     steam.style.display = 'none';
     
-    // pH Papier verstecken und im unsichtbaren Zustand wieder gelb färben
     phPaper.classList.remove('active', 'dipped');
     setTimeout(() => { phPaper.style.backgroundColor = '#fef08a'; }, 600);
     
@@ -412,15 +395,11 @@ function checkPH() {
     const paper = document.getElementById('ph-paper');
     
     paper.classList.add('active');
-    
-    setTimeout(() => {
-        paper.classList.add('dipped');
-    }, 100);
+    setTimeout(() => { paper.classList.add('dipped'); }, 100);
     
     let paperColor = "#fef08a"; 
     let phText = "annähernd neutral (oder unauffällig)";
     
-    // Sehr simpler Parser für die pH-Spalte
     if(aktuelleProbe.spezial.includes('stark basisch')) { paperColor = "#1e3a8a"; phText = "stark basisch"; }
     else if(aktuelleProbe.spezial.includes('schwach basisch')) { paperColor = "#3b82f6"; phText = "schwach basisch"; }
     
@@ -442,8 +421,7 @@ function checkGeruch(art) {
         let resultText = "Kein wahrnehmbarer Geruch.";
         let hasOdor = false;
         
-        // Prüfe ob in Spezial oder in den Reagenzien ein Hinweis auf Geruch steht
-        const checkStr = (aktuelleProbe.hcl + aktuelleProbe.h2so4 + aktuelleProbe.naoh + aktuelleProbe.nh3 + aktuelleProbe.spezial).toLowerCase();
+        const checkStr = (aktuelleProbe.spezial || "").toLowerCase();
         
         if (art === 'NaOH' && checkStr.includes('ammoniak')) {
             resultText = "Es steigt ein stechender Geruch auf (Ammoniak).";
@@ -542,24 +520,19 @@ function addReagent(reagent) {
             prep.style.height = "30%";
             prep.style.opacity = 1;
             
-            // Wenn es sich löst, simuliere das
-            if(resLower.includes("löst sich") || resLower.includes("löst") || resLower.includes("->")) {
+            if(resLower.includes("löst sich") || resLower.includes("->")) {
                 setTimeout(() => {
                     prep.style.opacity = 0;
                     prep.style.height = "0%";
-                    if(resLower.includes("blau")) liquid.style.backgroundColor = "rgba(30,58,138,0.6)"; // tiefblau
-                    if(resLower.includes("grün")) liquid.style.backgroundColor = "rgba(16,185,129,0.5)"; // smaragd
-                    if(resLower.includes("farblos")) liquid.style.backgroundColor = "rgba(255,255,255,0.1)"; // klar
+                    if(resLower.includes("blau")) liquid.style.backgroundColor = "rgba(30,58,138,0.6)"; 
+                    if(resLower.includes("grün")) liquid.style.backgroundColor = "rgba(16,185,129,0.5)"; 
+                    if(resLower.includes("farblos")) liquid.style.backgroundColor = "rgba(255,255,255,0.1)"; 
                 }, 1500);
             }
         }
 
         let outputText = result ? result : `Keine sichtbare Reaktion.`;
-        
-        if(isExpert) {
-            outputText = result ? `Reaktion beobachtet.` : `Keine sichtbare Reaktion.`;
-            if(isGas) outputText += " (Wahrnehmung: Gas/Geruch!)";
-        }
+        if(isExpert) outputText = result ? `Reaktion beobachtet.` + (isGas ? " (Wahrnehmung: Gas/Geruch!)" : "") : `Keine sichtbare Reaktion.`;
 
         updateStatus(outputText);
     }, 600);
@@ -575,30 +548,48 @@ function loesen() {
     const kBeweis = document.getElementById('kation-beweis').value;
     const aBeweis = document.getElementById('anion-beweis').value;
     const sName = document.getElementById('salt-name').value.trim();
-    const feedback = document.getElementById('auswertung-feedback');
     
     if(!kSelect || !aSelect || !kBeweis || !aBeweis || sName === "") {
-        feedback.innerHTML = "<span class='text-amber-400'>Bitte alle Felder und Beweise ausfüllen!</span>";
+        updateStatus("<span class='text-amber-400'>Bitte fülle zur Auswertung alle Felder aus!</span>");
         return;
     }
     
-    let isKationCorrect = (kSelect === aktuelleProbe.kation);
-    let isAnionCorrect = (aSelect === aktuelleProbe.anion);
+    const isKat = (kSelect === aktuelleProbe.kation);
+    const isAni = (aSelect === aktuelleProbe.anion);
+    const isBKat = (kBeweis === aktuelleProbe.beweis_kat);
+    const isBAni = (aBeweis === aktuelleProbe.beweis_ani);
     
-    let exactMatch = sName.toLowerCase() === aktuelleProbe.name.toLowerCase();
-    let testName = normalizeName(sName);
-    let refName = normalizeName(aktuelleProbe.name);
-    let isNameValid = exactMatch || (testName === refName) || (refName.includes(testName) && testName.length > 5);
+    const exactMatch = sName.toLowerCase() === aktuelleProbe.name.toLowerCase();
+    const testName = normalizeName(sName);
+    const refName = normalizeName(aktuelleProbe.name);
+    const isNameValid = exactMatch || (testName === refName) || (refName.includes(testName) && testName.length > 5);
+
+    const modal = document.getElementById('feedback-modal');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
     
-    if(isKationCorrect && isAnionCorrect && isNameValid) {
-        if(exactMatch) {
-            feedback.innerHTML = `<span class='text-emerald-400'>Perfekt!</span> Das Salz ist vollständig korrekt analysiert: ${aktuelleProbe.name}.`;
-        } else {
-            feedback.innerHTML = `<span class='text-emerald-400'>Richtig analysiert!</span> (Tipp zur genauen Schreibweise: <b>${aktuelleProbe.name}</b>)`;
-        }
+    let html = `<ul class="space-y-2">`;
+    html += `<li>Kation: ${isKat ? '✅ Korrekt' : `❌ Falsch (gewählt: ${kSelect})`}</li>`;
+    html += `<li>Beweis Kation: ${isBKat ? '✅ Korrekt' : `❌ Falsch`}</li>`;
+    html += `<li>Anion: ${isAni ? '✅ Korrekt' : `❌ Falsch (gewählt: ${aSelect})`}</li>`;
+    html += `<li>Beweis Anion: ${isBAni ? '✅ Korrekt' : `❌ Falsch`}</li>`;
+    html += `<li>Salzname: ${isNameValid ? '✅ Korrekt' : `❌ Falsch (eingetippt: ${sName})`}</li>`;
+    html += `</ul>`;
+    
+    if(isKat && isAni && isBKat && isBAni && isNameValid) {
+        title.innerText = "🎉 Perfekt analysiert!";
+        title.className = "text-2xl font-bold mb-6 text-emerald-400 text-center";
+        html += `<div class="mt-6 p-4 bg-emerald-900/50 border border-emerald-500 rounded text-emerald-100 text-center">
+                 Das Salz ist eindeutig <b>${aktuelleProbe.name}</b>. Hervorragende Arbeit!</div>`;
     } else {
-        feedback.innerHTML = `<span class='text-red-400'>Leider noch nicht ganz richtig.</span> Überprüfe deine Schlüsse!`;
+        title.innerText = "Prüfbericht";
+        title.className = "text-2xl font-bold mb-6 text-amber-400 text-center";
+        html += `<div class="mt-6 p-4 bg-amber-900/50 border border-amber-500 rounded text-amber-100 text-center">
+                 Da sind noch Fehler im Protokoll. Bitte überprüfe deine Beobachtungen und versuche es erneut!</div>`;
     }
+    
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
 }
 
 window.onload = init;
