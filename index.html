@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtuelles Ionenfischen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Theme Variables & Base */
+        :root {
+            --bg-body: #0f172a;
+            --bg-container: #1e293b;
+            --text-main: #f8fafc;
+            --tube-border: rgba(255, 255, 255, 0.7);
+            --tube-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body.light-mode {
+            --bg-body: #94a3b8;
+            --bg-container: #cbd5e1;
+            --text-main: #0f172a;
+            --tube-border: #334155; /* Dunkle Kanten im hellen Modus */
+            --tube-bg: rgba(255, 255, 255, 0.3);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background-color: var(--bg-container);
+            width: 100%;
+            max-w: 900px;
+            width: 900px; /* Feste Breite wie gefordert */
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+
+        /* Labor Bereich */
+        .lab-area {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3rem;
+            padding: 2rem;
+            min-height: 250px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        /* Reagenzglas */
+        .test-tube-container {
+            position: relative;
+            width: 60px;
+            height: 160px;
+        }
+        
+        .test-tube {
+            width: 100%;
+            height: 100%;
+            border: 4px solid var(--tube-border);
+            border-top: none;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            background-color: var(--tube-bg);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s, background-color 0.3s;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .liquid {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0%;
+            background-color: rgba(255, 255, 255, 0);
+            transition: height 0.5s ease-in-out, background-color 0.5s ease;
+        }
+
+        .precipitate {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0%;
+            background-color: transparent;
+            transition: height 0.5s ease-in-out, background-color 0.5s ease;
+            border-bottom-left-radius: 26px;
+            border-bottom-right-radius: 26px;
+            z-index: 10;
+        }
+
+        /* Tabs */
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            background: rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        body.light-mode .tab-btn {
+            background: rgba(255,255,255,0.4);
+        }
+        body.light-mode .tab-btn:hover {
+            background: rgba(255,255,255,0.6);
+        }
+
+        .tab-btn.active {
+            border-bottom-color: #3b82f6;
+            background: transparent;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 1.5rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Buttons & Utils */
+        .action-btn {
+            background-color: #3b82f6;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .action-btn:hover:not(:disabled) {
+            background-color: #2563eb;
+        }
+        .action-btn:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .reagent-btn {
+            background-color: #475569;
+            color: white;
+        }
+        .reagent-btn:hover:not(:disabled) { background-color: #334155; }
+        body.light-mode .reagent-btn { background-color: #64748b; }
+        body.light-mode .reagent-btn:hover:not(:disabled) { background-color: #475569; }
+
+        .status-box {
+            background-color: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            width: 350px;
+            height: 160px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        body.light-mode .status-box {
+            background-color: rgba(255, 255, 255, 0.6);
+            border-color: #94a3b8;
+        }
+    </style>
+</head>
+<body id="body">
+
+    <div class="app-container">
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 border-b border-slate-600/30">
+            <div class="flex items-center gap-4">
+                <h1 class="text-xl font-bold">Virtuelles Ionenfischen</h1>
+                <div class="px-3 py-1 bg-blue-900/50 text-blue-200 rounded-full text-sm font-bold border border-blue-700/50" id="budgetDisplay">
+                    Budget: 100 Tropfen
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" id="expertToggle" class="rounded w-4 h-4">
+                    Expertenmodus
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-sm mr-4">
+                    <input type="checkbox" id="themeToggle" class="rounded w-4 h-4">
+                    Licht
+                </label>
+                <button class="action-btn bg-slate-600 hover:bg-slate-700" onclick="app.clearTube()">Auswaschen</button>
+                <button class="action-btn" onclick="app.newSample()">Neue Probe</button>
+            </div>
+        </div>
+
+        <!-- Labor-Bereich -->
+        <div class="lab-area">
+            <div class="test-tube-container">
+                <div class="test-tube" id="testTube">
+                    <div class="precipitate" id="precipitateLayer"></div>
+                    <div class="liquid" id="liquidLayer"></div>
+                </div>
+            </div>
+            <div class="status-box" id="statusBox">
+                <div class="text-slate-400 mb-2">Labor-Protokoll bereit...</div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex w-full">
+            <div class="tab-btn active" onclick="app.switchTab('tab-vorproben')">1. Vorproben</div>
+            <div class="tab-btn" onclick="app.switchTab('tab-kationen')">2. Kationen</div>
+            <div class="tab-btn" onclick="app.switchTab('tab-anionen')">3. Anionen</div>
+            <div class="tab-btn" onclick="app.switchTab('tab-auswertung')">4. Auswertung</div>
+        </div>
+
+        <!-- Tab Inhalte -->
+        <div class="flex-grow">
+            <!-- TAB 1: Vorproben -->
+            <div id="tab-vorproben" class="tab-content active">
+                <h2 class="text-lg font-semibold mb-4">Erste Analysen (Vorproben)</h2>
+                <div class="flex gap-3">
+                    <button class="action-btn reagent-btn" onclick="app.testReagent('Farbe')">Farbe der Lösung prüfen (0 Tr.)</button>
+                    <button class="action-btn reagent-btn" onclick="app.testReagent('Flamme')">Flammenfärbung (5 Tr.)</button>
+                    <button class="action-btn reagent-btn" onclick="app.testReagent('pH')">pH-Wert prüfen (1 Tr.)</button>
+                </div>
+            </div>
+
+            <!-- TAB 2: Kationen -->
+            <div id="tab-kationen" class="tab-content">
+                <div class="grid grid-cols-3 gap-6">
+                    <div>
+                        <h3 class="font-semibold mb-3 border-b border-slate-600/30 pb-1">Säuren</h3>
+                        <div class="flex flex-col gap-2">
+                            <button class="action-btn reagent-btn" onclick="app.testReagent('HCl')">Zugabe HCl (dil.)</button>
+                            <button class="action-btn reagent-btn" onclick="app.testReagent('H2SO4')">Zugabe H₂SO₄</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-3 border-b border-slate-600/30 pb-1">Basen</h3>
+                        <div class="flex flex-col gap-2">
+                            <button class="action-btn reagent-btn" onclick="app.testReagent('NaOH')">Zugabe NaOH</button>
+                            <button class="action-btn reagent-btn" onclick="app.testReagent('NH3')">Zugabe NH₃ (aq)</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-3 border-b border-slate-600/30 pb-1">Spezialreagenzien</h3>
+                        <div class="flex flex-col gap-2">
+                            <button class="action-btn reagent-btn" onclick="app.testReagent('KSCN')">Zugabe KSCN (Thiocyanat)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Anionen -->
+            <div id="tab-anionen" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4">Anionen-Nachweise</h2>
+                <div class="flex flex-wrap gap-3">
+                    <button class="action-btn reagent-btn" onclick="app.testReagent('BaCl2')">Bariumchlorid (BaCl₂)</button>
+                    <button class="action-btn reagent-btn" onclick="app.testReagent('AgNO3')">Silbernitrat (AgNO₃)</button>
+                    <button class="action-btn reagent-btn" onclick="app.testReagent('Molybdat')">Ammoniummolybdat</button>
+                </div>
+            </div>
+
+            <!-- TAB 4: Auswertung -->
+            <div id="tab-auswertung" class="tab-content">
+                <h2 class="text-lg font-semibold mb-4">Ergebnis eintragen</h2>
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <label class="block text-sm mb-1 opacity-80">Gefundenes Kation:</label>
+                            <select id="selectCation" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white focus:outline-none focus:border-blue-500">
+                                <option value="">-- Bitte wählen --</option>
+                                <option value="Na+">Na⁺ (Natrium)</option>
+                                <option value="K+">K⁺ (Kalium)</option>
+                                <option value="Ca2+">Ca²⁺ (Calcium)</option>
+                                <option value="Sr2+">Sr²⁺ (Strontium)</option>
+                                <option value="Ba2+">Ba²⁺ (Barium)</option>
+                                <option value="Cu2+">Cu²⁺ (Kupfer)</option>
+                                <option value="Fe2+">Fe²⁺ (Eisen-II)</option>
+                                <option value="Fe3+">Fe³⁺ (Eisen-III)</option>
+                                <option value="Mg2+">Mg²⁺ (Magnesium)</option>
+                                <option value="Zn2+">Zn²⁺ (Zink)</option>
+                                <option value="Al3+">Al³⁺ (Aluminium)</option>
+                                <option value="Pb2+">Pb²⁺ (Blei)</option>
+                                <option value="Ag+">Ag⁺ (Silber)</option>
+                                <option value="NH4+">NH₄⁺ (Ammonium)</option>
+                                <option value="Li+">Li⁺ (Lithium)</option>
+                                <option value="Mn2+">Mn²⁺ (Mangan)</option>
+                                <option value="Co2+">Co²⁺ (Cobalt)</option>
+                                <option value="Ni2+">Ni²⁺ (Nickel)</option>
+                                <option value="Cr3+">Cr³⁺ (Chrom)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm mb-1 opacity-80">Kation-Beweis:</label>
+                            <select id="selectCationProof" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white focus:outline-none focus:border-blue-500">
+                                <!-- Wird dynamisch befüllt -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <label class="block text-sm mb-1 opacity-80">Gefundenes Anion:</label>
+                            <select id="selectAnion" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white focus:outline-none focus:border-blue-500">
+                                <option value="">-- Bitte wählen --</option>
+                                <option value="Cl-">Cl⁻ (Chlorid)</option>
+                                <option value="SO42-">SO₄²⁻ (Sulfat)</option>
+                                <option value="NO3-">NO₃⁻ (Nitrat)</option>
+                                <option value="CO32-">CO₃²⁻ (Carbonat)</option>
+                                <option value="I-">I⁻ (Iodid)</option>
+                                <option value="Br-">Br⁻ (Bromid)</option>
+                            </select>
+                        </div>
+                        <button class="action-btn w-full mt-auto py-3 text-lg" onclick="app.submitResult()">Ergebnis prüfen!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATENBANK DER 27 SALZE ---
+        const DATABASE = [
+            { id: 1, name: "NaCl", cation: "Na+", anion: "Cl-", color: "farblos", flame: "gelb", pH: "neutral", traits: ["AgNO3"] },
+            { id: 2, name: "KCl", cation: "K+", anion: "Cl-", color: "farblos", flame: "violett", pH: "neutral", traits: ["AgNO3"] },
+            { id: 3, name: "CaCl2", cation: "Ca2+", anion: "Cl-", color: "farblos", flame: "ziegelrot", pH: "neutral", traits: ["H2SO4", "AgNO3"] },
+            { id: 4, name: "SrCl2", cation: "Sr2+", anion: "Cl-", color: "farblos", flame: "karminrot", pH: "neutral", traits: ["H2SO4", "AgNO3"] },
+            { id: 5, name: "BaCl2", cation: "Ba2+", anion: "Cl-", color: "farblos", flame: "grün", pH: "neutral", traits: ["H2SO4", "AgNO3"] },
+            { id: 6, name: "CuSO4", cation: "Cu2+", anion: "SO42-", color: "hellblau", flame: "grün-blau", pH: "sauer", traits: ["NaOH", "NH3", "BaCl2"] },
+            { id: 7, name: "FeSO4", cation: "Fe2+", anion: "SO42-", color: "blassgrün", flame: "keine", pH: "sauer", traits: ["NaOH", "BaCl2"] },
+            { id: 8, name: "FeCl3", cation: "Fe3+", anion: "Cl-", color: "gelblich-braun", flame: "keine", pH: "stark sauer", traits: ["NaOH", "KSCN", "AgNO3"] },
+            { id: 9, name: "MgCl2", cation: "Mg2+", anion: "Cl-", color: "farblos", flame: "keine", pH: "neutral", traits: ["NaOH", "AgNO3"] },
+            { id: 10, name: "ZnSO4", cation: "Zn2+", anion: "SO42-", color: "farblos", flame: "keine", pH: "sauer", traits: ["NaOH", "BaCl2"] },
+            { id: 11, name: "AlCl3", cation: "Al3+", anion: "Cl-", color: "farblos", flame: "keine", pH: "stark sauer", traits: ["NaOH", "AgNO3"] },
+            { id: 12, name: "Pb(NO3)2", cation: "Pb2+", anion: "NO3-", color: "farblos", flame: "fahlblau", pH: "sauer", traits: ["HCl", "H2SO4", "NaOH"] },
+            { id: 13, name: "AgNO3", cation: "Ag+", anion: "NO3-", color: "farblos", flame: "keine", pH: "neutral", traits: ["HCl", "NaOH"] },
+            { id: 14, name: "NH4Cl", cation: "NH4+", anion: "Cl-", color: "farblos", flame: "keine", pH: "sauer", traits: ["NaOH", "AgNO3"] },
+            { id: 15, name: "K2CO3", cation: "K+", anion: "CO32-", color: "farblos", flame: "violett", pH: "basisch", traits: ["HCl", "BaCl2"] },
+            { id: 16, name: "Na2CO3", cation: "Na+", anion: "CO32-", color: "farblos", flame: "gelb", pH: "basisch", traits: ["HCl", "BaCl2"] },
+            { id: 17, name: "LiCl", cation: "Li+", anion: "Cl-", color: "farblos", flame: "karminrot", pH: "neutral", traits: ["AgNO3"] },
+            { id: 18, name: "MnCl2", cation: "Mn2+", anion: "Cl-", color: "blassrosa", flame: "keine", pH: "neutral", traits: ["NaOH", "AgNO3"] },
+            { id: 19, name: "CoCl2", cation: "Co2+", anion: "Cl-", color: "rosa", flame: "keine", pH: "neutral", traits: ["NaOH", "AgNO3"] },
+            { id: 20, name: "NiSO4", cation: "Ni2+", anion: "SO42-", color: "grün", flame: "keine", pH: "neutral", traits: ["NaOH", "BaCl2"] },
+            { id: 21, name: "CrCl3", cation: "Cr3+", anion: "Cl-", color: "dunkelgrün", flame: "keine", pH: "sauer", traits: ["NaOH", "AgNO3"] },
+            { id: 22, name: "Na2SO4", cation: "Na+", anion: "SO42-", color: "farblos", flame: "gelb", pH: "neutral", traits: ["BaCl2"] },
+            { id: 23, name: "K2SO4", cation: "K+", anion: "SO42-", color: "farblos", flame: "violett", pH: "neutral", traits: ["BaCl2"] },
+            { id: 24, name: "NaNO3", cation: "Na+", anion: "NO3-", color: "farblos", flame: "gelb", pH: "neutral", traits: [] },
+            { id: 25, name: "KNO3", cation: "K+", anion: "NO3-", color: "farblos", flame: "violett", pH: "neutral", traits: [] },
+            { id: 26, name: "KI", cation: "K+", anion: "I-", color: "farblos", flame: "violett", pH: "neutral", traits: ["AgNO3"] },
+            { id: 27, name: "NaBr", cation: "Na+", anion: "Br-", color: "farblos", flame: "gelb", pH: "neutral", traits: ["AgNO3"] }
+        ];
+
+        // --- APP LOGIK ---
+        const app = {
+            currentSalt: null,
+            budget: 100,
+            expertMode: false,
+            
+            init() {
+                // Event Listener für Toggles
+                document.getElementById('themeToggle').addEventListener('change', (e) => {
+                    document.body.classList.toggle('light-mode', e.target.checked);
+                    // Dropdowns im Light-Mode anpassen
+                    const selects = document.querySelectorAll('select');
+                    selects.forEach(s => {
+                        if(e.target.checked) {
+                            s.classList.remove('bg-slate-800', 'text-white');
+                            s.classList.add('bg-white', 'text-slate-900');
+                        } else {
+                            s.classList.add('bg-slate-800', 'text-white');
+                            s.classList.remove('bg-white', 'text-slate-900');
+                        }
+                    });
+                });
+
+                document.getElementById('expertToggle').addEventListener('change', (e) => {
+                    this.expertMode = e.target.checked;
+                });
+
+                this.newSample();
+            },
+
+            switchTab(tabId) {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                
+                document.getElementById(tabId).classList.add('active');
+                event.target.classList.add('active');
+
+                if(tabId === 'tab-auswertung') {
+                    this.updateAuswertungDropdown();
+                }
+            },
+
+            log(msg, forceGasHint = false) {
+                const box = document.getElementById('statusBox');
+                const time = new Date().toLocaleTimeString('de-DE', { hour12: false });
+                
+                let finalMsg = msg;
+                if (this.expertMode && forceGasHint) {
+                    finalMsg += ' <span class="text-yellow-400 font-bold">(Wahrnehmung: Geruchsbildung!)</span>';
+                }
+
+                const div = document.createElement('div');
+                div.className = 'mb-1 border-l-2 border-blue-500 pl-2';
+                div.innerHTML = `<span class="text-slate-500">[${time}]</span> ${finalMsg}`;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
+            },
+
+            updateBudget(cost) {
+                this.budget -= cost;
+                document.getElementById('budgetDisplay').innerText = `Budget: ${this.budget} Tropfen`;
+                if (this.budget <= 0) {
+                    this.log('<span class="text-red-500">Budget aufgebraucht! Keine weiteren Tests möglich.</span>');
+                    document.querySelectorAll('.reagent-btn').forEach(btn => btn.disabled = true);
+                    return false;
+                }
+                return true;
+            },
+
+            clearTube() {
+                const liq = document.getElementById('liquidLayer');
+                const pp = document.getElementById('precipitateLayer');
+                
+                liq.style.height = '0%';
+                pp.style.height = '0%';
+                
+                // Kurze Verzögerung für visuelles Feedback
+                setTimeout(() => {
+                    liq.style.backgroundColor = 'transparent';
+                    pp.style.backgroundColor = 'transparent';
+                    if(this.currentSalt) {
+                        this.setInitialLiquidColor();
+                    }
+                }, 300);
+            },
+
+            setInitialLiquidColor() {
+                const liq = document.getElementById('liquidLayer');
+                liq.style.height = '40%';
+                
+                const colorMap = {
+                    "farblos": "rgba(255, 255, 255, 0.1)",
+                    "hellblau": "rgba(59, 130, 246, 0.3)",
+                    "blassgrün": "rgba(134, 239, 172, 0.2)",
+                    "gelblich-braun": "rgba(234, 179, 8, 0.3)",
+                    "blassrosa": "rgba(244, 114, 182, 0.2)",
+                    "rosa": "rgba(236, 72, 153, 0.3)",
+                    "grün": "rgba(34, 197, 94, 0.3)",
+                    "dunkelgrün": "rgba(21, 128, 61, 0.4)"
+                };
+                liq.style.backgroundColor = colorMap[this.currentSalt.color] || "rgba(255, 255, 255, 0.1)";
+            },
+
+            newSample() {
+                this.currentSalt = DATABASE[Math.floor(Math.random() * DATABASE.length)];
+                this.budget = 100;
+                document.getElementById('budgetDisplay').innerText = `Budget: 100 Tropfen`;
+                document.querySelectorAll('.reagent-btn').forEach(btn => btn.disabled = false);
+                
+                document.getElementById('statusBox').innerHTML = '';
+                this.log('<strong>Neue Probe vorbereitet.</strong> Führe Analysen durch.');
+                
+                this.clearTube();
+                // Nach dem Waschen die Grundfarbe setzen
+                setTimeout(() => this.setInitialLiquidColor(), 350);
+
+                // UI Reset
+                document.getElementById('selectCation').value = "";
+                document.getElementById('selectAnion').value = "";
+                
+                // Springe zu Tab 1
+                document.querySelectorAll('.tab-btn')[0].click();
+            },
+
+            // Die smarte Filterung für die 7 Beweis-Optionen
+            updateAuswertungDropdown() {
+                const proofSelect = document.getElementById('selectCationProof');
+                proofSelect.innerHTML = '<option value="">-- Beweis wählen --</option>';
+                
+                const allProofs = [
+                    { id: "flamme_rot", label: "Flammenfärbung (rot-Töne)" },
+                    { id: "flamme_gelb", label: "Flammenfärbung (gelb)" },
+                    { id: "flamme_gruen_violett", label: "Flammenfärbung (grün/violett)" },
+                    { id: "naoh_niederschlag", label: "Niederschlag mit NaOH" },
+                    { id: "naoh_geruch", label: "Geruchsbildung mit NaOH (Ammoniak)" },
+                    { id: "hcl_niederschlag", label: "Niederschlag mit HCl" },
+                    { id: "h2so4_niederschlag", label: "Niederschlag mit H₂SO₄" }
+                ];
+
+                // Geforderte Logik: Besitzt das Salz KEINE Flammenfärbung, filtere Flammen-Distraktoren heraus.
+                let filteredProofs = allProofs;
+                if (this.currentSalt.flame === "keine") {
+                    filteredProofs = allProofs.filter(p => !p.id.startsWith("flamme_"));
+                }
+
+                // Fülle Dropdown so, dass es immer passend gefiltert ist (maximal 7 Optionen)
+                filteredProofs.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.innerText = p.label;
+                    proofSelect.appendChild(opt);
+                });
+            },
+
+            // Core Chemie-Engine
+            testReagent(reagent) {
+                // Vor jeder neuen Reagenzzugabe: Automatisches Spülen (verhindert Überlagerungen)
+                if (['HCl', 'H2SO4', 'NaOH', 'NH3', 'KSCN', 'BaCl2', 'AgNO3', 'Molybdat'].includes(reagent)) {
+                    this.clearTube();
+                }
+
+                // Kosten abziehen (Tropfen)
+                let cost = 2; // Standard
+                if (reagent === 'Farbe') cost = 0;
+                if (reagent === 'Flamme') cost = 5;
+                if (reagent === 'pH') cost = 1;
+
+                if (!this.updateBudget(cost)) return;
+
+                const s = this.currentSalt;
+                const liq = document.getElementById('liquidLayer');
+                const pp = document.getElementById('precipitateLayer');
+                
+                let resultText = "Keine sichtbare Veränderung.";
+                let hasGas = false;
+                let ppColor = null;
+
+                // Logik-Verteiler
+                setTimeout(() => {
+                    // Flüssigkeit steigt bei Zugabe leicht an
+                    if(cost > 0 && reagent !== 'Flamme' && reagent !== 'pH') {
+                        liq.style.height = '60%';
+                    }
+
+                    switch(reagent) {
+                        case 'Farbe':
+                            resultText = `Die Lösung ist ${s.color}.`;
+                            break;
+                        case 'Flamme':
+                            resultText = s.flame !== "keine" 
+                                ? `Flammenfärbung beobachtet: ${s.flame}` 
+                                : `Keine charakteristische Flammenfärbung.`;
+                            break;
+                        case 'pH':
+                            resultText = `pH-Papier zeigt: ${s.pH}.`;
+                            break;
+                        case 'HCl':
+                            if (s.cation === "Ag+" || s.cation === "Pb2+") {
+                                resultText = "Weißer, käsiger Niederschlag entsteht.";
+                                ppColor = "rgba(255,255,255,0.9)";
+                            } else if (s.anion === "CO32-") {
+                                resultText = "Starke Gasentwicklung (Aufschäumen).";
+                                hasGas = true; // Ist zwar CO2 (geruchlos), aber für visuelles Feedback
+                            }
+                            break;
+                        case 'H2SO4':
+                            if (["Ba2+", "Sr2+", "Ca2+", "Pb2+"].includes(s.cation)) {
+                                resultText = "Weißer, feinkörniger Niederschlag entsteht.";
+                                ppColor = "rgba(255,255,255,0.95)";
+                            }
+                            break;
+                        case 'NaOH':
+                            if (s.cation === "Cu2+") { resultText = "Blauer Niederschlag."; ppColor = "rgba(37, 99, 235, 0.9)"; }
+                            else if (s.cation === "Fe2+") { resultText = "Schmutzig-grüner Niederschlag."; ppColor = "rgba(74, 222, 128, 0.8)"; }
+                            else if (s.cation === "Fe3+") { resultText = "Rostbrauner, flockiger Niederschlag."; ppColor = "rgba(180, 83, 9, 0.9)"; }
+                            else if (s.cation === "Ag+") { resultText = "Brauner Niederschlag."; ppColor = "rgba(120, 53, 15, 0.9)"; }
+                            else if (["Mg2+", "Zn2+", "Al3+", "Pb2+", "Mn2+"].includes(s.cation)) { 
+                                resultText = "Weißer Niederschlag entsteht."; 
+                                ppColor = "rgba(255,255,255,0.85)"; 
+                            }
+                            else if (s.cation === "Ni2+") { resultText = "Hellgrüner Niederschlag."; ppColor = "rgba(34, 197, 94, 0.9)"; }
+                            else if (s.cation === "Co2+") { resultText = "Blau-rosafarbener Niederschlag."; ppColor = "rgba(219, 39, 119, 0.8)"; }
+                            else if (s.cation === "Cr3+") { resultText = "Graugrüner Niederschlag."; ppColor = "rgba(100, 116, 139, 0.9)"; }
+                            else if (s.cation === "NH4+") {
+                                resultText = "Kein Niederschlag, aber Gasentwicklung.";
+                                hasGas = true; // Ammoniak Geruch!
+                            }
+                            break;
+                        case 'NH3':
+                            if (s.cation === "Cu2+") {
+                                resultText = "Tiefblaue, klare Lösung (Komplexbildung).";
+                                liq.style.backgroundColor = "rgba(30, 58, 138, 0.8)";
+                            } else {
+                                resultText = "Keine spezifische Komplex- oder Niederschlagsbildung beobachtet.";
+                            }
+                            break;
+                        case 'KSCN':
+                            if (s.cation === "Fe3+") {
+                                resultText = "Tiefrote, blutähnliche Färbung der Lösung.";
+                                liq.style.backgroundColor = "rgba(153, 27, 27, 0.8)";
+                            }
+                            break;
+                        case 'BaCl2':
+                            if (s.anion === "SO42-" || s.anion === "CO32-") {
+                                resultText = "Weißer, feiner Niederschlag.";
+                                ppColor = "rgba(255, 255, 255, 0.95)";
+                            }
+                            break;
+                        case 'AgNO3':
+                            if (s.anion === "Cl-") { resultText = "Weißer, käsiger Niederschlag."; ppColor = "rgba(255, 255, 255, 0.9)"; }
+                            else if (s.anion === "Br-") { resultText = "Blassgelber Niederschlag."; ppColor = "rgba(254, 240, 138, 0.9)"; }
+                            else if (s.anion === "I-") { resultText = "Kräftig gelber Niederschlag."; ppColor = "rgba(234, 179, 8, 0.9)"; }
+                            break;
+                        case 'Molybdat':
+                            resultText = "Kein gelber Niederschlag (Phosphat negativ).";
+                            break;
+                    }
+
+                    // Render Precipitate
+                    if (ppColor) {
+                        pp.style.backgroundColor = ppColor;
+                        pp.style.height = '25%';
+                    }
+
+                    // Spezialbedingung für NH4+ und NaOH: Geruch
+                    const forceGasText = (reagent === 'NaOH' && s.cation === "NH4+");
+                    
+                    this.log(`> Test [${reagent}]: ${resultText}`, forceGasText);
+
+                }, 400); // Verzögerung für den "Reinigungs-Effekt"
+            },
+
+            submitResult() {
+                const selCat = document.getElementById('selectCation').value;
+                const selAn = document.getElementById('selectAnion').value;
+                const selProof = document.getElementById('selectCationProof').value;
+
+                if (!selCat || !selAn || !selProof) {
+                    alert("Bitte alle drei Felder zur Auswertung ausfüllen.");
+                    return;
+                }
+
+                let success = true;
+                let msg = "";
+
+                if (selCat === this.currentSalt.cation && selAn === this.currentSalt.anion) {
+                    msg = "Hervorragend! Das Salz ist korrekt identifiziert: " + this.currentSalt.name + "!";
+                } else {
+                    success = false;
+                    msg = `Fehler. Gefunden wurde ${this.currentSalt.name} (${this.currentSalt.cation} und ${this.currentSalt.anion}).`;
+                }
+
+                if (success) {
+                    this.log(`<span class="text-green-400 font-bold">ERGEBNIS KORREKT: ${msg}</span>`);
+                } else {
+                    this.log(`<span class="text-red-400 font-bold">FEHLGESCHLAGEN: ${msg}</span>`);
+                }
+            }
+        };
+
+        // App starten
+        app.init();
+    </script>
+</body>
+</html>
