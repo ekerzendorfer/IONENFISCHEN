@@ -19,7 +19,7 @@
             --bg-body: #94a3b8;
             --bg-container: #cbd5e1;
             --text-main: #0f172a;
-            --tube-border: #334155; /* Dunkle Kanten im hellen Modus */
+            --tube-border: #334155; 
             --tube-bg: rgba(255, 255, 255, 0.3);
         }
 
@@ -37,8 +37,8 @@
         .app-container {
             background-color: var(--bg-container);
             width: 100%;
-            max-w: 900px;
-            width: 900px; /* Feste Breite wie gefordert */
+            max-width: 900px;
+            width: 900px; 
             border-radius: 1rem;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             overflow: hidden;
@@ -183,7 +183,6 @@
 <body id="body">
 
     <div class="app-container">
-        <!-- Header -->
         <div class="flex justify-between items-center p-4 border-b border-slate-600/30">
             <div class="flex items-center gap-4">
                 <h1 class="text-xl font-bold">Virtuelles Ionenfischen</h1>
@@ -205,7 +204,6 @@
             </div>
         </div>
 
-        <!-- Labor-Bereich -->
         <div class="lab-area">
             <div class="test-tube-container">
                 <div class="test-tube" id="testTube">
@@ -218,17 +216,14 @@
             </div>
         </div>
 
-        <!-- Tabs Navigation -->
         <div class="flex w-full">
-            <div class="tab-btn active" onclick="app.switchTab('tab-vorproben')">1. Vorproben</div>
-            <div class="tab-btn" onclick="app.switchTab('tab-kationen')">2. Kationen</div>
-            <div class="tab-btn" onclick="app.switchTab('tab-anionen')">3. Anionen</div>
-            <div class="tab-btn" onclick="app.switchTab('tab-auswertung')">4. Auswertung</div>
+            <div class="tab-btn active" onclick="app.switchTab('tab-vorproben', this)">1. Vorproben</div>
+            <div class="tab-btn" onclick="app.switchTab('tab-kationen', this)">2. Kationen</div>
+            <div class="tab-btn" onclick="app.switchTab('tab-anionen', this)">3. Anionen</div>
+            <div class="tab-btn" onclick="app.switchTab('tab-auswertung', this)">4. Auswertung</div>
         </div>
 
-        <!-- Tab Inhalte -->
         <div class="flex-grow">
-            <!-- TAB 1: Vorproben -->
             <div id="tab-vorproben" class="tab-content active">
                 <h2 class="text-lg font-semibold mb-4">Erste Analysen (Vorproben)</h2>
                 <div class="flex gap-3">
@@ -238,7 +233,6 @@
                 </div>
             </div>
 
-            <!-- TAB 2: Kationen -->
             <div id="tab-kationen" class="tab-content">
                 <div class="grid grid-cols-3 gap-6">
                     <div>
@@ -264,7 +258,6 @@
                 </div>
             </div>
 
-            <!-- TAB 3: Anionen -->
             <div id="tab-anionen" class="tab-content">
                 <h2 class="text-lg font-semibold mb-4">Anionen-Nachweise</h2>
                 <div class="flex flex-wrap gap-3">
@@ -274,7 +267,6 @@
                 </div>
             </div>
 
-            <!-- TAB 4: Auswertung -->
             <div id="tab-auswertung" class="tab-content">
                 <h2 class="text-lg font-semibold mb-4">Ergebnis eintragen</h2>
                 <div class="grid grid-cols-2 gap-8">
@@ -307,8 +299,7 @@
                         <div>
                             <label class="block text-sm mb-1 opacity-80">Kation-Beweis:</label>
                             <select id="selectCationProof" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white focus:outline-none focus:border-blue-500">
-                                <!-- Wird dynamisch befüllt -->
-                            </select>
+                                </select>
                         </div>
                     </div>
                     <div class="flex flex-col gap-4">
@@ -332,7 +323,6 @@
     </div>
 
     <script>
-        // --- DATENBANK DER 27 SALZE ---
         const DATABASE = [
             { id: 1, name: "NaCl", cation: "Na+", anion: "Cl-", color: "farblos", flame: "gelb", pH: "neutral", traits: ["AgNO3"] },
             { id: 2, name: "KCl", cation: "K+", anion: "Cl-", color: "farblos", flame: "violett", pH: "neutral", traits: ["AgNO3"] },
@@ -363,17 +353,14 @@
             { id: 27, name: "NaBr", cation: "Na+", anion: "Br-", color: "farblos", flame: "gelb", pH: "neutral", traits: ["AgNO3"] }
         ];
 
-        // --- APP LOGIK ---
         const app = {
             currentSalt: null,
             budget: 100,
             expertMode: false,
             
             init() {
-                // Event Listener für Toggles
                 document.getElementById('themeToggle').addEventListener('change', (e) => {
                     document.body.classList.toggle('light-mode', e.target.checked);
-                    // Dropdowns im Light-Mode anpassen
                     const selects = document.querySelectorAll('select');
                     selects.forEach(s => {
                         if(e.target.checked) {
@@ -393,12 +380,22 @@
                 this.newSample();
             },
 
-            switchTab(tabId) {
+            // --- BUG GEFIXT: Keine fehleranfällige `event.target` Referenz mehr ---
+            switchTab(tabId, btnElement = null) {
+                // Alle Tabs und Inhalte de-aktivieren
                 document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
                 document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
                 
+                // Content-Container aktivieren
                 document.getElementById(tabId).classList.add('active');
-                event.target.classList.add('active');
+                
+                // Button aktivieren (entweder explizit übergeben oder per Suche gefunden)
+                if (btnElement) {
+                    btnElement.classList.add('active');
+                } else {
+                    const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+                    if (btn) btn.classList.add('active');
+                }
 
                 if(tabId === 'tab-auswertung') {
                     this.updateAuswertungDropdown();
@@ -439,7 +436,6 @@
                 liq.style.height = '0%';
                 pp.style.height = '0%';
                 
-                // Kurze Verzögerung für visuelles Feedback
                 setTimeout(() => {
                     liq.style.backgroundColor = 'transparent';
                     pp.style.backgroundColor = 'transparent';
@@ -476,18 +472,15 @@
                 this.log('<strong>Neue Probe vorbereitet.</strong> Führe Analysen durch.');
                 
                 this.clearTube();
-                // Nach dem Waschen die Grundfarbe setzen
                 setTimeout(() => this.setInitialLiquidColor(), 350);
 
-                // UI Reset
                 document.getElementById('selectCation').value = "";
                 document.getElementById('selectAnion').value = "";
                 
-                // Springe zu Tab 1
-                document.querySelectorAll('.tab-btn')[0].click();
+                // BUG GEFIXT: Sicherer Aufruf der Tab-Navigation
+                this.switchTab('tab-vorproben');
             },
 
-            // Die smarte Filterung für die 7 Beweis-Optionen
             updateAuswertungDropdown() {
                 const proofSelect = document.getElementById('selectCationProof');
                 proofSelect.innerHTML = '<option value="">-- Beweis wählen --</option>';
@@ -502,13 +495,11 @@
                     { id: "h2so4_niederschlag", label: "Niederschlag mit H₂SO₄" }
                 ];
 
-                // Geforderte Logik: Besitzt das Salz KEINE Flammenfärbung, filtere Flammen-Distraktoren heraus.
                 let filteredProofs = allProofs;
                 if (this.currentSalt.flame === "keine") {
                     filteredProofs = allProofs.filter(p => !p.id.startsWith("flamme_"));
                 }
 
-                // Fülle Dropdown so, dass es immer passend gefiltert ist (maximal 7 Optionen)
                 filteredProofs.forEach(p => {
                     const opt = document.createElement('option');
                     opt.value = p.id;
@@ -517,15 +508,12 @@
                 });
             },
 
-            // Core Chemie-Engine
             testReagent(reagent) {
-                // Vor jeder neuen Reagenzzugabe: Automatisches Spülen (verhindert Überlagerungen)
                 if (['HCl', 'H2SO4', 'NaOH', 'NH3', 'KSCN', 'BaCl2', 'AgNO3', 'Molybdat'].includes(reagent)) {
                     this.clearTube();
                 }
 
-                // Kosten abziehen (Tropfen)
-                let cost = 2; // Standard
+                let cost = 2; 
                 if (reagent === 'Farbe') cost = 0;
                 if (reagent === 'Flamme') cost = 5;
                 if (reagent === 'pH') cost = 1;
@@ -540,9 +528,7 @@
                 let hasGas = false;
                 let ppColor = null;
 
-                // Logik-Verteiler
                 setTimeout(() => {
-                    // Flüssigkeit steigt bei Zugabe leicht an
                     if(cost > 0 && reagent !== 'Flamme' && reagent !== 'pH') {
                         liq.style.height = '60%';
                     }
@@ -565,7 +551,7 @@
                                 ppColor = "rgba(255,255,255,0.9)";
                             } else if (s.anion === "CO32-") {
                                 resultText = "Starke Gasentwicklung (Aufschäumen).";
-                                hasGas = true; // Ist zwar CO2 (geruchlos), aber für visuelles Feedback
+                                hasGas = true;
                             }
                             break;
                         case 'H2SO4':
@@ -588,7 +574,7 @@
                             else if (s.cation === "Cr3+") { resultText = "Graugrüner Niederschlag."; ppColor = "rgba(100, 116, 139, 0.9)"; }
                             else if (s.cation === "NH4+") {
                                 resultText = "Kein Niederschlag, aber Gasentwicklung.";
-                                hasGas = true; // Ammoniak Geruch!
+                                hasGas = true; 
                             }
                             break;
                         case 'NH3':
@@ -621,18 +607,15 @@
                             break;
                     }
 
-                    // Render Precipitate
                     if (ppColor) {
                         pp.style.backgroundColor = ppColor;
                         pp.style.height = '25%';
                     }
 
-                    // Spezialbedingung für NH4+ und NaOH: Geruch
                     const forceGasText = (reagent === 'NaOH' && s.cation === "NH4+");
-                    
                     this.log(`> Test [${reagent}]: ${resultText}`, forceGasText);
 
-                }, 400); // Verzögerung für den "Reinigungs-Effekt"
+                }, 400); 
             },
 
             submitResult() {
@@ -663,7 +646,6 @@
             }
         };
 
-        // App starten
         app.init();
     </script>
 </body>
