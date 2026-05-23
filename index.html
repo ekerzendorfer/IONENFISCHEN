@@ -72,6 +72,7 @@
         
         .action-btn { width: 100%; padding: 10px 16px; background-color: #334155; border: 1px solid #475569; border-radius: 6px; color: white; text-align: left; margin-bottom: 8px; cursor: pointer; transition: background-color 0.2s; font-size: 0.9rem; }
         .action-btn:hover { background-color: #475569; }
+        .action-btn .cost { float: right; font-size: 0.75rem; opacity: 0.5; margin-top: 2px; }
         .section-title { font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; margin: 16px 0 8px 0; font-weight: bold; border-bottom: 1px solid #334155; padding-bottom: 4px; }
         
         .hidden { display: none !important; }
@@ -142,37 +143,37 @@
             <div class="grid-2col">
                 <div>
                     <div class="section-title mt-0">Standard-Tests</div>
-                    <button class="action-btn" onclick="checkFarbe()">Farbe der Lösung prüfen</button>
-                    <button class="action-btn" onclick="checkFlamme()">Flammenfärbung prüfen</button>
-                    <button class="action-btn" onclick="checkPH()">pH-Wert messen</button>
+                    <button class="action-btn" onclick="checkFarbe()">Farbe der Lösung prüfen <span class="cost">1 Tr.</span></button>
+                    <button class="action-btn" onclick="checkFlamme()">Flammenfärbung prüfen <span class="cost">1 Tr.</span></button>
+                    <button class="action-btn" onclick="checkPH()">pH-Wert messen <span class="cost">1 Tr.</span></button>
                 </div>
                 <div>
                     <div class="section-title mt-0">Geruchsnachweise</div>
-                    <button class="action-btn" onclick="checkGeruch('NaOH')">Erwärmen mit NaOH (Ammonium-Test)</button>
+                    <button class="action-btn" onclick="checkGeruch('NaOH')">Erwärmen mit NaOH <span class="cost">1 Tr.</span></button>
+                    <button class="action-btn" onclick="checkGeruch('Säure')">Erwärmen mit Säure <span class="cost">1 Tr.</span></button>
                 </div>
             </div>
         </div>
 
         <div id="tab-kat" class="tab-content hidden">
             <div class="grid-2col">
-                <button class="action-btn" onclick="addReagent('HCl')">HCl (Salzsäure)</button>
-                <button class="action-btn" onclick="addReagent('H2SO4')">H₂SO₄ (Schwefelsäure)</button>
-                <button class="action-btn" onclick="addReagent('NaOH')">NaOH (Natronlauge)</button>
-                <button class="action-btn" onclick="addReagent('NaOH_ue')">NaOH (im Überschuss)</button>
-                <button class="action-btn" onclick="addReagent('NH3')">NH₄OH (Ammoniakwasser)</button>
-                <button class="action-btn" onclick="addReagent('NH3_ue')">NH₄OH (im Überschuss)</button>
-                <button class="action-btn" onclick="addReagent('Na2CO3')">Na₂CO₃ (Natriumcarbonat)</button>
-                <button class="action-btn" onclick="addReagent('Na2S')">Na₂S (Natriumsulfid)</button>
+                <button class="action-btn" onclick="addReagent('HCl')">HCl (Salzsäure) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('H2SO4')">H₂SO₄ (Schwefelsäure) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('NaOH')">NaOH (Natronlauge) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('NaOH_ue')">NaOH (im Überschuss) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('NH3')">NH₄OH (Ammoniakwasser) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('NH3_ue')">NH₄OH (im Überschuss) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('Na2CO3')">Na₂CO₃ (Natriumcarbonat) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('Na2S')">Na₂S (Natriumsulfid) <span class="cost">1 Tr.</span></button>
             </div>
         </div>
 
         <div id="tab-ani" class="tab-content hidden">
             <div class="grid-2col">
-                <button class="action-btn" onclick="addReagent('BaCl2')">BaCl₂ (Bariumchlorid)</button>
-                <button class="action-btn" onclick="addReagent('AgNO3')">AgNO₃ (Silbernitrat)</button>
-                <button class="action-btn" onclick="addReagent('Molybdat')">Ammoniummolybdat</button>
-                <button class="action-btn" onclick="doRingprobe()">Ringprobe (auf Nitrat)</button>
-                <button class="action-btn" onclick="checkSaeureAnion()">Säurezugabe (auf Carbonat/Acetat)</button>
+                <button class="action-btn" onclick="addReagent('BaCl2')">BaCl₂ (Bariumchlorid) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('AgNO3')">AgNO₃ (Silbernitrat) <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="addReagent('Molybdat')">Ammoniummolybdat <span class="cost">1 Tr.</span></button>
+                <button class="action-btn" onclick="doRingprobe()">Ringprobe (auf Nitrat) <span class="cost">1 Tr.</span></button>
             </div>
         </div>
 
@@ -225,7 +226,7 @@ let allAnionBeweise = [];
 function formatChem(text) {
     if(!text) return "";
     let s = text;
-    // Verbindungen und Reagenzien (Indizes tiefstellen)
+    // Indizes tiefstellen
     s = s.replace(/H2SO4/g, "H₂SO₄")
          .replace(/BaCl2/g, "BaCl₂")
          .replace(/Na2CO3/g, "Na₂CO₃")
@@ -236,33 +237,35 @@ function formatChem(text) {
          .replace(/NH3/g, "NH₃")
          .replace(/Ag2O/g, "Ag₂O")
          .replace(/H2O/g, "H₂O");
-    // Kationen (Ladungen hochstellen)
-    s = s.replace(/Na\+/g, "Na⁺")
-         .replace(/K\+/g, "K⁺")
+    // Ladungen hochstellen (alle 17 Kationen + Anionen)
+    s = s.replace(/Al3\+/g, "Al³⁺")
+         .replace(/Cr3\+/g, "Cr³⁺")
+         .replace(/Fe3\+/g, "Fe³⁺")
          .replace(/Ca2\+/g, "Ca²⁺")
          .replace(/Ba2\+/g, "Ba²⁺")
          .replace(/Cu2\+/g, "Cu²⁺")
          .replace(/Fe2\+/g, "Fe²⁺")
-         .replace(/Fe3\+/g, "Fe³⁺")
          .replace(/Zn2\+/g, "Zn²⁺")
          .replace(/Ni2\+/g, "Ni²⁺")
-         .replace(/Ag\+/g, "Ag⁺")
-         .replace(/NH4\+/g, "NH₄⁺")
-         .replace(/Cr3\+/g, "Cr³⁺")
          .replace(/Cd2\+/g, "Cd²⁺")
          .replace(/Pb2\+/g, "Pb²⁺")
          .replace(/Mn2\+/g, "Mn²⁺")
          .replace(/Mg2\+/g, "Mg²⁺")
-         .replace(/Li\+/g, "Li⁺")
-         .replace(/Co2\+/g, "Co²⁺");
-    // Anionen (Ladungen hochstellen)
-    s = s.replace(/Cl\-/g, "Cl⁻")
+         .replace(/Co2\+/g, "Co²⁺")
+         .replace(/Sr2\+/g, "Sr²⁺")
+         .replace(/Na\+/g, "Na⁺")
+         .replace(/K\+/g, "K⁺")
+         .replace(/Ag\+/g, "Ag⁺")
+         .replace(/NH4\+/g, "NH₄⁺")
+         .replace(/Li\+/g, "Li⁺");
+    // Anionen
+    s = s.replace(/PO4 3\-/g, "PO₄³⁻")
          .replace(/CO3 2\-/g, "CO₃²⁻")
          .replace(/SO4 2\-/g, "SO₄²⁻")
+         .replace(/Cl\-/g, "Cl⁻")
          .replace(/Br\-/g, "Br⁻")
          .replace(/CH3COO\-/g, "CH₃COO⁻")
          .replace(/NO3\-/g, "NO₃⁻")
-         .replace(/PO4 3\-/g, "PO₄³⁻")
          .replace(/HCO3\-/g, "HCO₃⁻")
          .replace(/OH\-/g, "OH⁻");
     return s;
@@ -288,7 +291,7 @@ function init() {
         })
         .catch(error => {
             console.error("Fehler beim Laden:", error);
-            updateStatus("Fehler beim Laden der Datenbank (salze.json)!");
+            updateStatus("Fehler beim Laden der Datenbank (salze.json)! Lade die App über einen lokalen Webserver oder lade sie auf GitHub hoch.");
         });
 }
 
@@ -342,7 +345,6 @@ function neueProbe() {
     budget = 100;
     document.getElementById('budget').innerText = budget;
     
-    // Dynamisch genau 7 Kationen und 7 Beweise für diese Probe mischen
     mixCationDropdowns();
 
     document.getElementById('kation-select').value = "";
@@ -363,7 +365,7 @@ function mixCationDropdowns() {
     kSelect.innerHTML = '<option value="">Kation wählen...</option>';
     kbSelect.innerHTML = '<option value="">Beweis Kation wählen...</option>';
 
-    // 1 richtige Antwort + 6 zufällige Distraktoren
+    // Genau 7 Optionen
     let distractorsK = allKations.filter(k => k !== aktuelleProbe.kation).sort(() => 0.5 - Math.random()).slice(0, 6);
     let finalKations = [aktuelleProbe.kation, ...distractorsK].sort();
 
@@ -455,6 +457,7 @@ function checkFlamme() {
     if(!checkBudget()) return;
     const flame = document.getElementById('flame');
     const stick = document.getElementById('magnesia-stick');
+    
     stick.classList.add('active');
     
     setTimeout(() => {
@@ -473,6 +476,7 @@ function checkFlamme() {
 function checkPH() {
     if(!checkBudget()) return;
     const paper = document.getElementById('ph-paper');
+    
     paper.classList.add('active');
     setTimeout(() => { paper.classList.add('dipped'); }, 100);
     
@@ -483,6 +487,7 @@ function checkPH() {
     else if((aktuelleProbe.spezial||"").includes('schwach basisch')) { paperColor = "#3b82f6"; phText = "schwach basisch"; }
     
     setTimeout(() => { paper.style.backgroundColor = paperColor; }, 700);
+    
     setTimeout(() => { 
         paper.classList.remove('dipped'); 
         let text = `Das pH-Papier deutet auf ein ${phText}es Milieu hin.`;
@@ -498,12 +503,21 @@ function checkGeruch(art) {
     setTimeout(() => {
         let resultText = "Kein wahrnehmbarer Geruch.";
         let hasOdor = false;
+        let hasBubbles = false;
         
-        const checkStr = (aktuelleProbe.spezial || "").toLowerCase();
+        const checkStr = ((aktuelleProbe.spezial||"") + " " + (aktuelleProbe.hcl||"") + " " + (aktuelleProbe.h2so4||"")).toLowerCase();
         
         if (art === 'NaOH' && checkStr.includes('ammoniak')) {
             resultText = "Es steigt ein stechender Geruch auf (Ammoniak).";
             hasOdor = true;
+        } else if (art === 'Säure') {
+            if (checkStr.includes('essig')) {
+                resultText = "Es ist ein deutlicher Essiggeruch wahrnehmbar.";
+                hasOdor = true;
+            } else if (checkStr.includes('gas') || checkStr.includes('co2')) {
+                resultText = "Deutliche Gasentwicklung (Aufschäumen) bemerkbar.";
+                hasBubbles = true;
+            }
         }
         
         if (hasOdor) {
@@ -511,51 +525,17 @@ function checkGeruch(art) {
             steam.style.display = 'block';
             setTimeout(() => { steam.style.display = 'none'; }, 3000);
         }
-        
-        if (isExpert) {
-            resultText = hasOdor ? "Wahrnehmung: Geruchsbildung!" : "Keine Auffälligkeiten.";
-        }
-        
-        updateStatus(`Erwärmen mit ${art}... ` + resultText);
-    }, 600);
-}
-
-function checkSaeureAnion() {
-    if(!checkBudget()) return;
-    glasAuswaschen(false);
-    
-    setTimeout(() => {
-        let resultText = "Keine sichtbare Reaktion.";
-        let isGas = false;
-        let isSmell = false;
-        
-        // Prüfe hcl, h2so4 und beweis_ani auf Hinweise zu Gas/Essig
-        const checkStr = (aktuelleProbe.hcl + aktuelleProbe.h2so4 + (aktuelleProbe.beweis_ani||"")).toLowerCase();
-        
-        if (checkStr.includes('co2') || checkStr.includes('gas') || checkStr.includes('aufschäumen')) {
-            resultText = "Deutliche Gasentwicklung (Aufschäumen) bemerkbar.";
-            isGas = true;
-        } else if (checkStr.includes('essig')) {
-            resultText = "Es ist ein deutlicher Essiggeruch wahrnehmbar.";
-            isSmell = true;
-        }
-        
-        if (isGas) {
+        if (hasBubbles) {
             const bubbles = document.getElementById('bubbles');
             bubbles.style.display = 'block';
             setTimeout(() => { bubbles.style.display = 'none'; }, 3000);
         }
-        if (isSmell) {
-            const steam = document.getElementById('steam');
-            steam.style.display = 'block';
-            setTimeout(() => { steam.style.display = 'none'; }, 3000);
-        }
         
         if (isExpert) {
-            resultText = (isGas || isSmell) ? "Wahrnehmung: Gas/Geruchsbildung!" : "Keine Auffälligkeiten.";
+            resultText = (hasOdor || hasBubbles) ? "Wahrnehmung: Gas/Geruchsbildung!" : "Keine Auffälligkeiten.";
         }
         
-        updateStatus(`Säurezugabe... ` + resultText);
+        updateStatus(`Erwärmen mit ${art}... ` + resultText);
     }, 600);
 }
 
@@ -646,8 +626,12 @@ function addReagent(reagent) {
     }, 600);
 }
 
-function normalizeName(str) {
+// Name-Validator-Helper
+function stripRoman(str) {
     return str.toLowerCase().replace(/[\(\)ivx\s-]/g, '');
+}
+function normalizeName(str) {
+    return str.toLowerCase().replace(/[\s-]/g, '');
 }
 
 function loesen() {
@@ -667,10 +651,16 @@ function loesen() {
     const isBKat = (kBeweis === aktuelleProbe.beweis_kat);
     const isBAni = (aBeweis === aktuelleProbe.beweis_ani);
     
+    // Namensüberprüfung
     const exactMatch = sName.toLowerCase() === aktuelleProbe.name.toLowerCase();
-    const testName = normalizeName(sName);
-    const refName = normalizeName(aktuelleProbe.name);
-    const isNameValid = exactMatch || (testName === refName) || (refName.includes(testName) && testName.length > 5);
+    const testNorm = normalizeName(sName);
+    const refNorm = normalizeName(aktuelleProbe.name);
+    const testStrip = stripRoman(sName);
+    const refStrip = stripRoman(aktuelleProbe.name);
+    
+    const isNameExact = exactMatch || (testNorm === refNorm);
+    const isNameTolerated = !isNameExact && (testStrip === refStrip || refStrip.includes(testStrip));
+    const isNameValid = isNameExact || isNameTolerated;
 
     const modal = document.getElementById('feedback-modal');
     const content = document.getElementById('modal-content');
@@ -681,14 +671,25 @@ function loesen() {
     html += `<li>Beweis Kation: ${isBKat ? '✅ Korrekt' : `❌ Falsch`}</li>`;
     html += `<li>Anion: ${isAni ? '✅ Korrekt' : `❌ Falsch (gewählt: ${formatChem(aSelect)})`}</li>`;
     html += `<li>Beweis Anion: ${isBAni ? '✅ Korrekt' : `❌ Falsch`}</li>`;
-    html += `<li>Salzname: ${isNameValid ? '✅ Korrekt' : `❌ Falsch (eingetippt: ${sName})`}</li>`;
+    
+    if(isNameExact) {
+        html += `<li>Salzname: ✅ Korrekt</li>`;
+    } else if(isNameTolerated) {
+        html += `<li>Salzname: ⚠️ Akzeptiert (Tipp: <b>${formatChem(aktuelleProbe.name)}</b>)</li>`;
+    } else {
+        html += `<li>Salzname: ❌ Falsch (eingetippt: ${sName})</li>`;
+    }
     html += `</ul>`;
     
     if(isKat && isAni && isBKat && isBAni && isNameValid) {
         title.innerText = "🎉 Perfekt analysiert!";
         title.className = "text-2xl font-bold mb-6 text-emerald-400 text-center";
-        html += `<div class="mt-6 p-4 bg-emerald-900/50 border border-emerald-500 rounded text-emerald-100 text-center">
-                 Das Salz ist eindeutig <b>${aktuelleProbe.name}</b>. Hervorragende Arbeit!</div>`;
+        
+        let msg = isNameTolerated ? 
+            `Das Salz ist <b>${formatChem(aktuelleProbe.name)}</b>. <br>Achte künftig bei der Eingabe auf die genaue chemische Schreibweise!` : 
+            `Das Salz ist eindeutig <b>${formatChem(aktuelleProbe.name)}</b>. Hervorragende Arbeit!`;
+            
+        html += `<div class="mt-6 p-4 bg-emerald-900/50 border border-emerald-500 rounded text-emerald-100 text-center">${msg}</div>`;
     } else {
         title.innerText = "Prüfbericht";
         title.className = "text-2xl font-bold mb-6 text-amber-400 text-center";
