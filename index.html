@@ -77,6 +77,13 @@
         
         .hidden { display: none !important; }
         .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .bridge-context { display: none; margin-bottom: 20px; padding: 14px 16px; border: 1px solid #0ea5e9; border-radius: 10px; background: rgba(14,165,233,.08); }
+        .bridge-context.active { display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+        .bridge-context strong { color: #7dd3fc; display: block; margin-bottom: 3px; }
+        .bridge-context .bridge-meta { color: #cbd5e1; font-size: .82rem; }
+        .bridge-context .bridge-run { color: #94a3b8; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .72rem; }
+        .bridge-context.bridge-error { border-color: #f87171; background: rgba(248,113,113,.08); }
     </style>
 </head>
 <body>
@@ -96,7 +103,7 @@
             <div class="flex items-center gap-3">
                 <span class="text-sm font-mono bg-slate-800 px-3 py-1 rounded border border-slate-700">Budget: <span id="budget">100</span> Tr.</span>
                 <button onclick="glasAuswaschen(true)" class="bg-slate-600 hover:bg-slate-500 px-3 py-1 rounded text-sm transition">Auswaschen</button>
-                <button onclick="neueProbe()" class="bg-sky-600 hover:bg-sky-500 px-4 py-1 rounded text-sm font-bold shadow transition">Neue Probe</button>
+                <button id="new-probe-btn" onclick="neueProbe()" class="bg-sky-600 hover:bg-sky-500 px-4 py-1 rounded text-sm font-bold shadow transition">Neue Probe</button>
             </div>
             <div class="flex items-center gap-4">
                 <label class="text-xs text-slate-400 cursor-pointer flex items-center gap-2 hover:text-white transition">
@@ -107,6 +114,16 @@
                 </label>
             </div>
         </div>
+    </div>
+
+    <div id="bridge-context" class="bridge-context">
+        <div>
+            <strong>Analyseauftrag aus dem Proben-Hub</strong>
+            <div id="bridge-sample-label" class="bridge-meta">Unbekannte Ionen-Teilprobe</div>
+            <div id="bridge-run-label" class="bridge-run"></div>
+            <div id="bridge-message" class="bridge-meta mt-1"></div>
+        </div>
+        <button id="bridge-return-btn" type="button" class="bg-slate-600 hover:bg-slate-500 px-4 py-2 rounded text-sm font-bold transition">Ohne neues Resultat zurück</button>
     </div>
 
     <!-- Labor Bereich -->
@@ -238,6 +255,149 @@ let budget = 100;
 let currentProbeDrops = 0;
 let isExpert = false;
 let probenHistorie = [];
+let bridgeMode = bridgeRequested();
+let bridgeRun = null;
+let bridgePerformedTests = new Set();
+
+function bridgeRequested() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('bridge') === '1';
+}
+
+function loadAnalytikBridgeScript() {
+    if (window.AnalytikBridge) return Promise.resolve(window.AnalytikBridge);
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = new URL('../CHEMIE_ANALYTIK_HUB/bridge/chemie-analytik-bridge.js', window.location.href).toString();
+        script.onload = () => window.AnalytikBridge ? resolve(window.AnalytikBridge) : reject(new Error('Bridge-Script geladen, API fehlt.'));
+        script.onerror = () => reject(new Error('CHEMIE_ANALYTIK_BRIDGE konnte nicht geladen werden.'));
+        document.head.appendChild(script);
+    });
+}
+
+function setBridgeBanner(message, isError = false) {
+    const box = document.getElementById('bridge-context');
+    if (!box) return;
+    box.classList.add('active');
+    box.classList.toggle('bridge-error', !!isError);
+    document.getElementById('bridge-message').textContent = message || '';
+}
+
+function recordBridgeTest(code) {
+    if (bridgeMode) bridgePerformedTests.add(code);
+}
+
+function prepareCurrentProbe(statusText) {
+    budget = 100;
+    currentProbeDrops = 0;
+    document.getElementById('budget').innerText = budget;
+    mixCationDropdowns();
+    document.getElementById('kation-select').value = "";
+    document.getElementById('anion-select').value = "";
+    document.getElementById('kation-beweis').value = "";
+    document.getElementById('anion-beweis').value = "";
+    document.getElementById('salt-name').value = "";
+    glasAuswaschen(false);
+    switchTab('vor');
+    updateStatus(statusText || "Neue Probe bereit. Starte mit den Vorproben.");
+}
+
+async function initAnalytikBridge() {
+    const params = new URLSearchParams(window.location.search);
+    const runId = params.get('run');
+    try {
+        if (!runId) throw new Error('run-Parameter fehlt.');
+        await loadAnalytikBridgeScript();
+        const run = window.AnalytikBridge.getRun(runId);
+        if (!run) throw new Error('Der Analyse-Run wurde nicht gefunden.');
+        if (run.app_id !== 'ION_FISHING') throw new Error('Der Run ist nicht für Ionenfischen bestimmt.');
+
+        const modelRef = run.input && run.input.model_ref;
+        const model = salze.find(s => s.id === modelRef);
+        if (!model) throw new Error('Die angeforderte Hub-Probe ist in salze.json nicht vorhanden.');
+
+        bridgeRun = run;
+        aktuelleProbe = model;
+        bridgePerformedTests = new Set();
+
+        const newProbeBtn = document.getElementById('new-probe-btn');
+        newProbeBtn.disabled = true;
+        newProbeBtn.classList.add('opacity-40', 'cursor-not-allowed');
+        newProbeBtn.textContent = 'Hub-Probe';
+
+        document.getElementById('probe-label').innerText = 'Probe: ' + run.sample_id;
+        document.getElementById('bridge-sample-label').textContent = (run.input?.display_label || 'Unbekannte Ionen-Teilprobe') + ' · ' + run.sample_id;
+        document.getElementById('bridge-run-label').textContent = run.run_id;
+        setBridgeBanner(run.input?.note || 'Bestimme Kation und Anion durch geeignete Nachweise.');
+        document.getElementById('bridge-return-btn').addEventListener('click', () => window.AnalytikBridge.returnToHub(bridgeRun));
+
+        prepareCurrentProbe('Hub-Probe bereit. Plane geeignete qualitative Nachweise.');
+    } catch (err) {
+        setBridgeBanner('Hub-Verbindung fehlgeschlagen: ' + err.message, true);
+        updateStatus('Hub-Verbindung fehlgeschlagen.');
+    }
+}
+
+function bridgeEvidenceComplete() {
+    if (!bridgeMode || !bridgeRun) return true;
+    const required = bridgeRun.input?.required_evidence || [];
+    return required.every(code => bridgePerformedTests.has(code));
+}
+
+function missingBridgeEvidence() {
+    if (!bridgeMode || !bridgeRun) return [];
+    const required = bridgeRun.input?.required_evidence || [];
+    return required.filter(code => !bridgePerformedTests.has(code));
+}
+
+function evidenceLabel(code) {
+    const labels = {
+        NH3_ue: 'Ammoniak im Überschuss',
+        BaCl2: 'Bariumchlorid'
+    };
+    return labels[code] || code;
+}
+
+function sendBridgeResult(kSelect, aSelect, kBeweis, aBeweis, sName) {
+    if (!bridgeMode || !bridgeRun || !window.AnalytikBridge) return;
+    const result = {
+        result_id: 'RES_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        run_id: bridgeRun.run_id,
+        case_id: bridgeRun.case_id,
+        sample_id: bridgeRun.sample_id,
+        app_id: 'ION_FISHING',
+        analysis_type: 'QUALITATIVE_ION_ANALYSIS',
+        status: 'completed',
+        source: 'app',
+        measurement: {
+            performed_tests: Array.from(bridgePerformedTests),
+            drops_used: currentProbeDrops
+        },
+        evaluation: {
+            identity_status: 'confirmed',
+            identified: {
+                cation: kSelect,
+                anion: aSelect,
+                salt_name: aktuelleProbe.name
+            },
+            evidence: {
+                cation: kBeweis,
+                anion: aBeweis,
+                student_salt_name: sName
+            },
+            real_experiment: 'Optional: Löse eine kleine Menge Kupfer(II)-sulfat in Wasser. Gib zunächst wenig Ammoniaklösung zu und beobachte den hellblauen Niederschlag. Gib anschließend Ammoniaklösung im Überschuss zu und beobachte die tiefblaue Lösung des Tetraamminkupfer(II)-Komplexes. Vergleiche die Beobachtungen mit dem virtuellen Nachweis.'
+        },
+        student_interpretation: {
+            cation: kSelect,
+            anion: aSelect,
+            salt_name: sName
+        },
+        created_at: new Date().toISOString()
+    };
+
+    const completed = window.AnalytikBridge.completeRun(bridgeRun.run_id, result);
+    window.AnalytikBridge.returnToHub(completed);
+}
 
 let allKations = [];
 let allKationBeweise = [];
@@ -276,7 +436,11 @@ function init() {
             if (salze.length > 0) {
                 extractUniqueData();
                 populateStaticAnionDropdowns();
-                neueProbe();
+                if (bridgeMode) {
+                    initAnalytikBridge();
+                } else {
+                    neueProbe();
+                }
             } else {
                 updateStatus("Fehler: salze.json ist leer!");
             }
@@ -342,21 +506,7 @@ function neueProbe() {
     probenHistorie.push(aktuelleProbe.id);
     
     document.getElementById('probe-label').innerText = `Probe: ${aktuelleProbe.id.toUpperCase()}`;
-    budget = 100;
-    currentProbeDrops = 0;
-    document.getElementById('budget').innerText = budget;
-    
-    mixCationDropdowns();
-
-    document.getElementById('kation-select').value = "";
-    document.getElementById('anion-select').value = "";
-    document.getElementById('kation-beweis').value = "";
-    document.getElementById('anion-beweis').value = "";
-    document.getElementById('salt-name').value = "";
-
-    glasAuswaschen(false);
-    switchTab('vor');
-    updateStatus("Neue Probe bereit. Starte mit den Vorproben.");
+    prepareCurrentProbe("Neue Probe bereit. Starte mit den Vorproben.");
 }
 
 function mixCationDropdowns() {
@@ -473,6 +623,7 @@ function glasAuswaschen(manual) {
 
 function checkFarbe() {
     if(!checkBudget()) return;
+    recordBridgeTest('FARBE');
     animateDrops(1);
     let text = aktuelleProbe.farbe.charAt(0).toUpperCase() + aktuelleProbe.farbe.slice(1);
     if(isExpert) text = "Farbe wurde begutachtet.";
@@ -481,6 +632,7 @@ function checkFarbe() {
 
 function checkFlamme() {
     if(!checkBudget()) return;
+    recordBridgeTest('FLAMME');
     animateDrops(1);
     const flame = document.getElementById('flame');
     const stick = document.getElementById('magnesia-stick');
@@ -502,6 +654,7 @@ function checkFlamme() {
 
 function checkPH() {
     if(!checkBudget()) return;
+    recordBridgeTest('PH');
     animateDrops(1);
     const paper = document.getElementById('ph-paper');
     
@@ -525,6 +678,7 @@ function checkPH() {
 
 function checkGeruch(art) {
     if(!checkBudget()) return;
+    recordBridgeTest('GERUCH_' + art);
     glasAuswaschen(false);
     animateDrops(1);
     
@@ -569,6 +723,7 @@ function checkGeruch(art) {
 
 function doRingprobe() {
     if(!checkBudget()) return;
+    recordBridgeTest('RINGPROBE');
     glasAuswaschen(false);
     animateDrops(1);
     
@@ -598,6 +753,7 @@ function doRingprobe() {
 
 function addReagent(reagent) {
     if(!checkBudget()) return;
+    recordBridgeTest(reagent);
     glasAuswaschen(false);
     
     let dropCount = (reagent.includes('_ue')) ? 4 : 1;
@@ -716,22 +872,40 @@ function loesen() {
     html += `Verbrauchte Tropfen für diese Probe: <span class="text-sky-400 font-bold">${currentProbeDrops} Tr.</span><br>`;
     
     if(isKat && isAni && isBKat && isBAni && isNameValid) {
-        let oldHighscore = localStorage.getItem('score_ionen_' + aktuelleProbe.id);
-        if(!oldHighscore || currentProbeDrops < parseInt(oldHighscore)) {
-            localStorage.setItem('score_ionen_' + aktuelleProbe.id, currentProbeDrops);
-            html += `<span class="text-amber-400 font-bold text-[15px] block mt-1">🏆 Neuer persönlicher Forscher-Rekord für dieses Salz!</span>`;
-        } else {
-            html += `<span class="text-slate-400 block mt-1">⭐ Dein persönlicher Rekord für dieses Salz liegt bei: ${oldHighscore} Tr.</span>`;
+        if (!bridgeMode) {
+            let oldHighscore = localStorage.getItem('score_ionen_' + aktuelleProbe.id);
+            if(!oldHighscore || currentProbeDrops < parseInt(oldHighscore)) {
+                localStorage.setItem('score_ionen_' + aktuelleProbe.id, currentProbeDrops);
+                html += `<span class="text-amber-400 font-bold text-[15px] block mt-1">🏆 Neuer persönlicher Forscher-Rekord für dieses Salz!</span>`;
+            } else {
+                html += `<span class="text-slate-400 block mt-1">⭐ Dein persönlicher Rekord für dieses Salz liegt bei: ${oldHighscore} Tr.</span>`;
+            }
         }
-        
-        title.innerText = "🎉 Perfekt analysiert!";
-        title.className = "text-2xl font-bold mb-6 text-emerald-400 text-center";
-        
-        let msg = isNameTolerated ? 
-            `Das Salz ist <b>${formatChem(aktuelleProbe.name)}</b>. <br>Achte künftig bei der Eingabe auf die genaue Wertigkeit!` : 
-            `Das Salz ist eindeutig <b>${formatChem(aktuelleProbe.name)}</b>. Hervorragende Arbeit!`;
-            
-        html += `<div class="mt-6 p-4 bg-emerald-900/50 border border-emerald-500 rounded text-emerald-100 text-center">${msg}</div>`;
+
+        const missing = missingBridgeEvidence();
+        if (bridgeMode && missing.length) {
+            title.innerText = "Zuordnung richtig – Nachweis noch unvollständig";
+            title.className = "text-2xl font-bold mb-6 text-amber-400 text-center";
+            html += `<div class="mt-6 p-4 bg-amber-900/50 border border-amber-500 rounded text-amber-100 text-center">
+                Die Stoffzuordnung ist richtig. Für ein bestätigtes Hub-RESULT musst du die entscheidenden Nachweise aber auch tatsächlich durchführen:
+                <b>${missing.map(evidenceLabel).join(", ")}</b>.
+            </div>`;
+        } else {
+            title.innerText = "🎉 Perfekt analysiert!";
+            title.className = "text-2xl font-bold mb-6 text-emerald-400 text-center";
+
+            let msg = isNameTolerated ?
+                `Das Salz ist <b>${formatChem(aktuelleProbe.name)}</b>. <br>Achte künftig bei der Eingabe auf die genaue Wertigkeit!` :
+                `Das Salz ist eindeutig <b>${formatChem(aktuelleProbe.name)}</b>. Hervorragende Arbeit!`;
+
+            html += `<div class="mt-6 p-4 bg-emerald-900/50 border border-emerald-500 rounded text-emerald-100 text-center">${msg}</div>`;
+
+            if (bridgeMode) {
+                html += `<button id="bridge-result-btn" type="button" class="mt-4 w-full bg-sky-600 hover:bg-sky-500 py-3 rounded font-bold text-white transition">
+                    Bestätigte Ionen an den Proben-Hub übergeben
+                </button>`;
+            }
+        }
     } else {
         title.innerText = "Prüfbericht";
         title.className = "text-2xl font-bold mb-6 text-amber-400 text-center";
@@ -742,6 +916,11 @@ function loesen() {
     
     content.innerHTML = html;
     modal.classList.remove('hidden');
+
+    const bridgeResultBtn = document.getElementById('bridge-result-btn');
+    if (bridgeResultBtn) {
+        bridgeResultBtn.addEventListener('click', () => sendBridgeResult(kSelect, aSelect, kBeweis, aBeweis, sName));
+    }
 }
 
 window.onload = init;
