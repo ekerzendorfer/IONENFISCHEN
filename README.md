@@ -35,3 +35,26 @@ Laden Sie die Dateien (`index.html` und `salze.json`) in ein GitHub-Repository h
 
 Ein didaktisches Tool von **Mag. Erich Kerzendorfer**.
 Entwickelt im Rahmen der Integration von Künstlicher Intelligenz im naturwissenschaftlichen Unterricht (Vorgestellt in *Chemie & Schule*).
+
+
+## Analytik-Hub-Adapter
+
+Der Single-Mode bleibt vollständig erhalten. Nur ein Aufruf mit
+
+```text
+?bridge=1&run=RUN_...
+```
+
+aktiviert den Hub-Modus.
+
+Im Hub-Modus:
+
+- wird die vom Hub vorgegebene unbekannte Probe geladen, ohne ihre Identität im UI offenzulegen,
+- ist „Neue Probe“ deaktiviert,
+- müssen Kation, Anion, Nachweise und Salzname weiterhin von den Lernenden selbst eingegeben werden,
+- kann der Hub zusätzlich verlangen, dass bestimmte Nachweise tatsächlich durchgeführt wurden,
+- wird erst nach korrekter Auswertung und vollständiger Evidenz ein `QUALITATIVE_ION_ANALYSIS`-RESULT freigegeben,
+- enthält das RESULT die bestätigten Ionen, ausgewählten Begründungen und die tatsächlich durchgeführten Tests,
+- kann ein optionaler Realversuch als Anschlussidee an den Hub übergeben werden.
+
+Für VCÖ-01 wird intern `probe_05` (Kupfer(II)-sulfat) verwendet; diese interne Modell-ID wird im Hub-Modus nicht als Stoffidentität angezeigt.
